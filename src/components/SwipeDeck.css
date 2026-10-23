@@ -1,0 +1,85 @@
+.swipe-deck {
+  position: relative;
+  flex: 1;
+  min-height: 420px;
+}
+
+.swipe-deck__card {
+  position: absolute;
+  inset: 0;
+}
+
+.swipe-deck__card--back {
+  transform: scale(0.96) translateY(10px);
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.swipe-deck__card--top {
+  touch-action: none;
+  cursor: grab;
+  outline: none;
+}
+
+.swipe-deck__card--top:focus-visible {
+  box-shadow: 0 0 0 3px var(--color-accent);
+  border-radius: var(--radius-lg);
+}
+
+.swipe-deck__label {
+  position: absolute;
+  top: var(--space-5);
+  z-index: 2;
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-sm);
+  border: 3px solid currentColor;
+  pointer-events: none;
+}
+
+.swipe-deck__label--save {
+  right: var(--space-5);
+  color: var(--color-save);
+  transform: rotate(-8deg);
+}
+
+.swipe-deck__label--pass {
+  left: var(--space-5);
+  color: var(--color-pass);
+  transform: rotate(8deg);
+}
+
+.swipe-deck__buttons {
+  position: absolute;
+  z-index: 3;
+  bottom: var(--space-5);
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  gap: var(--space-5);
+  pointer-events: none;
+}
+
+.swipe-deck__buttons .swipe-deck__button {
+  pointer-events: auto;
+}
+
+.swipe-deck__button {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  font-size: var(--font-size-xl);
+  box-shadow: var(--shadow-card);
+}
+
+.swipe-deck__button--pass {
+  color: var(--color-pass);
+}
+
+.swipe-deck__button--save {
+  color: var(--color-save);
+}

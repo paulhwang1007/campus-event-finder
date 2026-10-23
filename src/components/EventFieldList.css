@@ -1,0 +1,38 @@
+.event-fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.event-fields__title {
+  font-size: var(--font-size-xl);
+  margin: 0;
+}
+
+.event-fields__organizer {
+  color: var(--color-text-muted);
+}
+
+.event-fields__now {
+  background: var(--color-accent-bg);
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.event-fields__field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--color-border);
+}
+
+.event-fields__label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+.event-fields__value {
+  font-size: var(--font-size-base);
+}

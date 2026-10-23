@@ -1,0 +1,49 @@
+:root {
+  /* Grayscale */
+  --color-bg: #ffffff;
+  --color-surface: #f7f7f8;
+  --color-border: #e2e2e5;
+  --color-text: #1a1a1d;
+  --color-text-muted: #6b6b70;
+
+  /* Accent (Cornell-red placeholder, swap in design pass) */
+  --color-accent: #b31b1b;
+  --color-accent-bg: #fbeaea;
+  --color-save: #2e7d32;
+  --color-save-bg: #e8f5e9;
+  --color-pass: #6b6b70;
+
+  /* Spacing scale */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  /* Radius */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+
+  /* Font */
+  --font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-size-sm: 13px;
+  --font-size-base: 15px;
+  --font-size-lg: 18px;
+  --font-size-xl: 22px;
+
+  --shadow-card: 0 2px 10px rgba(0, 0, 0, 0.08);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #121214;
+    --color-surface: #1c1c1f;
+    --color-border: #303035;
+    --color-text: #f2f2f3;
+    --color-text-muted: #9b9ba0;
+    --color-accent-bg: #2a1616;
+    --color-save-bg: #163322;
+  }
+}
