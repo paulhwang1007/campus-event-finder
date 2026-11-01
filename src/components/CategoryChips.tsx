@@ -14,7 +14,7 @@ export function CategoryChips({ value, onChange }: Props) {
       {categories.map((c) => (
         <Chip
           key={c.id}
-          label={`${c.emoji} ${c.label}`}
+          label={c.label}
           active={value === c.id}
           onClick={() => onChange(c.id)}
         />

@@ -1,17 +1,29 @@
-:root {
-  /* Grayscale */
-  --color-bg: #ffffff;
-  --color-surface: #f7f7f8;
-  --color-border: #e2e2e5;
-  --color-text: #1a1a1d;
-  --color-text-muted: #6b6b70;
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap');
 
-  /* Accent (Cornell-red placeholder, swap in design pass) */
-  --color-accent: #b31b1b;
-  --color-accent-bg: #fbeaea;
-  --color-save: #2e7d32;
-  --color-save-bg: #e8f5e9;
-  --color-pass: #6b6b70;
+:root {
+  /* Surfaces and text */
+  --color-bg: #fff8f1;
+  --color-surface: #ffffff;
+  --color-border: #e9dccf;
+  --color-text: #241a16;
+  --color-text-muted: #665850;
+
+  /* Brand */
+  --color-primary: #c03b1c;
+  --color-primary-soft: #ffede5;
+  --color-on-primary: #ffffff;
+  --color-secondary: #0c6a70;
+  --color-secondary-soft: #d3eeec;
+
+  /* Status */
+  --color-highlight: #f2b630;
+  --color-neutral: #4d433e;
+  --color-danger: #b3202a;
+  --color-focus: #2c5ad8;
+  --color-disabled: #efe6dd;
+
+  /* Accents */
+  --color-accent-4: #2d6629;
 
   /* Spacing scale */
   --space-1: 4px;
@@ -25,25 +37,48 @@
   --radius-sm: 6px;
   --radius-md: 12px;
   --radius-lg: 20px;
+  --radius-full: 999px;
 
   /* Font */
-  --font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --font-size-sm: 13px;
-  --font-size-base: 15px;
-  --font-size-lg: 18px;
-  --font-size-xl: 22px;
+  --font-family: 'Poppins', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 
-  --shadow-card: 0 2px 10px rgba(0, 0, 0, 0.08);
-}
+  /* Type scale: size / line-height / weight */
+  --text-display-size: 34px;
+  --text-display-lh: 38px;
+  --text-display-weight: 800;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-bg: #121214;
-    --color-surface: #1c1c1f;
-    --color-border: #303035;
-    --color-text: #f2f2f3;
-    --color-text-muted: #9b9ba0;
-    --color-accent-bg: #2a1616;
-    --color-save-bg: #163322;
-  }
+  --text-title1-size: 28px;
+  --text-title1-lh: 32px;
+  --text-title1-weight: 700;
+
+  --text-title2-size: 22px;
+  --text-title2-lh: 28px;
+  --text-title2-weight: 700;
+
+  --text-headline-size: 18px;
+  --text-headline-lh: 24px;
+  --text-headline-weight: 700;
+
+  --text-body-size: 16px;
+  --text-body-lh: 24px;
+  --text-body-weight: 400;
+
+  --text-bodystrong-size: 16px;
+  --text-bodystrong-lh: 24px;
+  --text-bodystrong-weight: 600;
+
+  --text-label-size: 16px;
+  --text-label-lh: 20px;
+  --text-label-weight: 700;
+
+  --text-bodysm-size: 14px;
+  --text-bodysm-lh: 20px;
+  --text-bodysm-weight: 400;
+
+  --text-caption-size: 13px;
+  --text-caption-lh: 16px;
+  --text-caption-weight: 600;
+
+  --shadow-card: 0 8px 24px rgba(36, 26, 22, 0.1);
+  --shadow-nav: 0 4px 16px rgba(36, 26, 22, 0.15);
 }

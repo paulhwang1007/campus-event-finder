@@ -38,37 +38,60 @@ export function SwipeDeck({ cards, now, onSwipe, onOpen }: Props) {
 
   return (
     <div className="swipe-deck">
-      {next && (
-        <div className="swipe-deck__card swipe-deck__card--back">
-          <EventCard event={next.event} isOutsideInterests={next.isOutsideInterests} now={now} />
-        </div>
-      )}
-      <TopCard
-        key={top.event.id}
-        card={top}
-        now={now}
-        onCommit={(action) => onSwipe(top.event.id, action)}
-        onOpen={() => onOpen(top.event.id)}
-        commitRef={commitRef}
-      />
-      {/* Siblings of the draggable card, not children: Framer Motion's drag listener is
-          attached natively to the draggable element, so a click here never passes through it. */}
-      <div className="swipe-deck__buttons">
+      <div className="swipe-deck__stack">
+        {next && (
+          <div className="swipe-deck__card swipe-deck__card--back">
+            <EventCard event={next.event} isOutsideInterests={next.isOutsideInterests} now={now} />
+          </div>
+        )}
+        <TopCard
+          key={top.event.id}
+          card={top}
+          now={now}
+          onCommit={(action) => onSwipe(top.event.id, action)}
+          onOpen={() => onOpen(top.event.id)}
+          commitRef={commitRef}
+        />
+
+        {/* Siblings of the draggable card, not children: Framer Motion's drag listener is
+            attached natively to the draggable element, so a click here never passes through it. */}
         <button
           type="button"
           aria-label="Pass on this event"
-          className="swipe-deck__button swipe-deck__button--pass"
+          className="swipe-deck__chevron swipe-deck__chevron--left"
           onClick={() => commitRef.current?.('pass')}
         >
-          ✕
+          ‹
         </button>
         <button
           type="button"
           aria-label="Mark this event as interested"
-          className="swipe-deck__button swipe-deck__button--save"
+          className="swipe-deck__chevron swipe-deck__chevron--right"
           onClick={() => commitRef.current?.('save')}
         >
-          ✓
+          ›
+        </button>
+      </div>
+
+      <div className="swipe-deck__actions">
+        <div className="swipe-deck__choice-row">
+          <button
+            type="button"
+            className="swipe-deck__choice swipe-deck__choice--skip"
+            onClick={() => commitRef.current?.('pass')}
+          >
+            Skip
+          </button>
+          <button
+            type="button"
+            className="swipe-deck__choice swipe-deck__choice--interested"
+            onClick={() => commitRef.current?.('save')}
+          >
+            Interested
+          </button>
+        </div>
+        <button type="button" className="swipe-deck__join" onClick={() => commitRef.current?.('save')}>
+          Join event
         </button>
       </div>
     </div>

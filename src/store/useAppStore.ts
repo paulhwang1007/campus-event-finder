@@ -22,6 +22,7 @@ interface AppState {
   swipe: (eventId: string, action: 'save' | 'pass') => void;
   toggleSaved: (eventId: string) => void;
   markUpdatesSeen: (eventId: string) => void;
+  resetDemo: () => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -69,6 +70,17 @@ export const useAppStore = create<AppState>()(
         const latest = event.updates[event.updates.length - 1];
         set({
           lastSeenUpdateAt: { ...get().lastSeenUpdateAt, [eventId]: latest.createdAt },
+        });
+      },
+
+      resetDemo: () => {
+        set({
+          user: DEFAULT_USER,
+          events: generateSeedEvents(new Date()),
+          savedIds: [],
+          passedIds: [],
+          reportedIds: [],
+          lastSeenUpdateAt: {},
         });
       },
     }),

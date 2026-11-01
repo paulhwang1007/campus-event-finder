@@ -1,5 +1,7 @@
 .feed__heading {
-  font-size: var(--font-size-xl);
+  font-size: var(--text-title1-size);
+  line-height: var(--text-title1-lh);
+  font-weight: var(--text-title1-weight);
   margin: 0;
 }
 
@@ -12,4 +14,14 @@
   gap: var(--space-2);
   color: var(--color-text-muted);
   text-align: center;
+}
+
+.feed__reset {
+  margin-top: var(--space-3);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--text-bodysm-size);
 }

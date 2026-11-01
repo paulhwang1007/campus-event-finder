@@ -15,15 +15,17 @@
 
 .update-list__message {
   margin: 0;
-  font-size: var(--font-size-base);
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-lh);
 }
 
 .update-list__time {
-  font-size: var(--font-size-sm);
+  font-size: var(--text-caption-size);
+  line-height: var(--text-caption-lh);
   color: var(--color-text-muted);
 }
 
 .update-list__empty {
   color: var(--color-text-muted);
-  font-size: var(--font-size-sm);
+  font-size: var(--text-bodysm-size);
 }

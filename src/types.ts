@@ -11,6 +11,8 @@ export interface Category {
   id: CategoryId;
   label: string;
   emoji: string;
+  /** CSS gradient used for the card image zone, tinting each category distinctly. */
+  gradient: string;
 }
 
 export type ClassYear = 'First-year' | 'Sophomore' | 'Junior' | 'Senior' | 'Transfer';

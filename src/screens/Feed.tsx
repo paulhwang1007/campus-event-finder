@@ -16,6 +16,7 @@ export function Feed() {
   const passedIds = useAppStore((s) => s.passedIds);
   const reportedIds = useAppStore((s) => s.reportedIds);
   const swipe = useAppStore((s) => s.swipe);
+  const resetDemo = useAppStore((s) => s.resetDemo);
 
   const now = useMemo(() => new Date(), [events, savedIds, passedIds, reportedIds]);
 
@@ -26,7 +27,7 @@ export function Feed() {
 
   return (
     <div className="screen">
-      <h1 className="feed__heading">Discover</h1>
+      <h1 className="feed__heading">Discover Events</h1>
       <CategoryChips value={category} onChange={setCategory} />
 
       {cards.length > 0 ? (
@@ -37,17 +38,20 @@ export function Feed() {
           onOpen={(eventId) => navigate(`/events/${eventId}`)}
         />
       ) : (
-        <EmptyState filtered={category !== 'all'} />
+        <EmptyState filtered={category !== 'all'} onReset={resetDemo} />
       )}
     </div>
   );
 }
 
-function EmptyState({ filtered }: { filtered: boolean }) {
+function EmptyState({ filtered, onReset }: { filtered: boolean; onReset: () => void }) {
   return (
     <div className="feed__empty">
       <p>You're all caught up 🎉</p>
       {filtered && <p>Try "All" categories.</p>}
+      <button type="button" className="feed__reset" onClick={onReset}>
+        Reset demo
+      </button>
     </div>
   );
 }

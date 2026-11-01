@@ -5,7 +5,9 @@
 }
 
 .event-fields__title {
-  font-size: var(--font-size-xl);
+  font-size: var(--text-title1-size);
+  line-height: var(--text-title1-lh);
+  font-weight: var(--text-title1-weight);
   margin: 0;
 }
 
@@ -14,9 +16,9 @@
 }
 
 .event-fields__now {
-  background: var(--color-accent-bg);
-  color: var(--color-accent);
-  border-color: var(--color-accent);
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  border-color: var(--color-primary);
 }
 
 .event-fields__field {
@@ -28,11 +30,13 @@
 }
 
 .event-fields__label {
-  font-size: var(--font-size-sm);
+  font-size: var(--text-caption-size);
+  line-height: var(--text-caption-lh);
   color: var(--color-text-muted);
-  font-weight: 600;
+  font-weight: var(--text-caption-weight);
 }
 
 .event-fields__value {
-  font-size: var(--font-size-base);
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-lh);
 }
