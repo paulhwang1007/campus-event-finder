@@ -12,7 +12,14 @@
 }
 
 .event-fields__organizer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
   color: var(--color-text-muted);
+}
+
+.event-fields__organizer svg {
+  flex: none;
 }
 
 .event-fields__now {
@@ -30,10 +37,17 @@
 }
 
 .event-fields__label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
   font-size: var(--text-caption-size);
   line-height: var(--text-caption-lh);
   color: var(--color-text-muted);
   font-weight: var(--text-caption-weight);
+}
+
+.event-fields__label svg {
+  flex: none;
 }
 
 .event-fields__value {

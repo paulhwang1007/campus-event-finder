@@ -26,8 +26,8 @@
   font-weight: var(--text-caption-weight);
 }
 
-.bottom-nav__item span:first-child {
-  font-size: var(--text-headline-size);
+.bottom-nav__item svg {
+  flex: none;
 }
 
 .bottom-nav__item--active {

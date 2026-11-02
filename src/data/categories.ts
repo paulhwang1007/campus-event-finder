@@ -1,3 +1,12 @@
+import {
+  IconBasketball,
+  IconBook,
+  IconCamera,
+  IconGamepad,
+  IconMountain,
+  IconPalette,
+  IconUtensils,
+} from '../components/Icon';
 import type { Category } from '../types';
 
 function gradient(token: string): string {
@@ -5,13 +14,13 @@ function gradient(token: string): string {
 }
 
 export const categories: Category[] = [
-  { id: 'sports', label: 'Sports & Active', emoji: '🏀', gradient: gradient('--color-primary') },
-  { id: 'arts', label: 'Arts & Creative', emoji: '🎨', gradient: gradient('--color-secondary') },
-  { id: 'food', label: 'Food & Hangouts', emoji: '🍕', gradient: gradient('--color-highlight') },
-  { id: 'outdoors', label: 'Outdoors', emoji: '🌄', gradient: gradient('--color-accent-4') },
-  { id: 'games', label: 'Games & Movies', emoji: '🎮', gradient: gradient('--color-focus') },
-  { id: 'study', label: 'Study & Chill', emoji: '📚', gradient: gradient('--color-neutral') },
-  { id: 'services', label: 'Student Services', emoji: '📸', gradient: gradient('--color-danger') },
+  { id: 'sports', label: 'Sports & Active', icon: IconBasketball, gradient: gradient('--color-primary') },
+  { id: 'arts', label: 'Arts & Creative', icon: IconPalette, gradient: gradient('--color-secondary') },
+  { id: 'food', label: 'Food & Hangouts', icon: IconUtensils, gradient: gradient('--color-highlight') },
+  { id: 'outdoors', label: 'Outdoors', icon: IconMountain, gradient: gradient('--color-accent-4') },
+  { id: 'games', label: 'Games & Movies', icon: IconGamepad, gradient: gradient('--color-focus') },
+  { id: 'study', label: 'Study & Chill', icon: IconBook, gradient: gradient('--color-neutral') },
+  { id: 'services', label: 'Student Services', icon: IconCamera, gradient: gradient('--color-danger') },
 ];
 
 export function getCategory(id: Category['id']): Category {

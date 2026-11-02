@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { EventFieldList } from '../components/EventFieldList';
+import { IconArrowLeft, IconCheck } from '../components/Icon';
 import { UpdateList } from '../components/UpdateList';
 import { useAppStore } from '../store/useAppStore';
 import './EventDetails.css';
@@ -25,8 +26,8 @@ export function EventDetails() {
   if (!event) {
     return (
       <div className="screen">
-        <button type="button" onClick={() => navigate(-1)}>
-          ← Back
+        <button type="button" className="event-details__back" onClick={() => navigate(-1)}>
+          <IconArrowLeft /> Back
         </button>
         <p>Event not found.</p>
       </div>
@@ -35,8 +36,8 @@ export function EventDetails() {
 
   return (
     <div className="screen">
-      <button type="button" onClick={() => navigate(-1)} aria-label="Back">
-        ← Back
+      <button type="button" className="event-details__back" onClick={() => navigate(-1)} aria-label="Back">
+        <IconArrowLeft /> Back
       </button>
 
       {event.cancelled && <div className="event-details__cancelled">This event was cancelled.</div>}
@@ -54,7 +55,13 @@ export function EventDetails() {
         className={`event-details__toggle${isSaved ? ' event-details__toggle--saved' : ''}`}
         onClick={() => toggleSaved(event.id)}
       >
-        {isSaved ? '✓ Saved' : "I'm interested"}
+        {isSaved ? (
+          <>
+            <IconCheck size={16} /> Saved
+          </>
+        ) : (
+          "I'm interested"
+        )}
       </button>
     </div>
   );

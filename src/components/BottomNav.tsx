@@ -1,30 +1,31 @@
 import { NavLink } from 'react-router-dom';
+import { IconBookmark, IconCompass, IconPlus, IconUser } from './Icon';
 import './BottomNav.css';
 
 const ITEMS = [
-  { label: 'Discover', icon: '🧭', to: '/feed' },
-  { label: 'Create', icon: '＋', to: null },
-  { label: 'Interested', icon: '🔖', to: null },
-  { label: 'Profile', icon: '👤', to: null },
+  { label: 'Discover', Icon: IconCompass, to: '/feed' },
+  { label: 'Create', Icon: IconPlus, to: null },
+  { label: 'Interested', Icon: IconBookmark, to: null },
+  { label: 'Profile', Icon: IconUser, to: null },
 ] as const;
 
 export function BottomNav() {
   return (
     <nav className="bottom-nav" aria-label="Main">
-      {ITEMS.map((item) =>
-        item.to ? (
+      {ITEMS.map(({ label, Icon, to }) =>
+        to ? (
           <NavLink
-            key={item.label}
-            to={item.to}
+            key={label}
+            to={to}
             className={({ isActive }) => `bottom-nav__item${isActive ? ' bottom-nav__item--active' : ''}`}
           >
-            <span aria-hidden="true">{item.icon}</span>
-            <span>{item.label}</span>
+            <Icon size={20} />
+            <span>{label}</span>
           </NavLink>
         ) : (
-          <span key={item.label} className="bottom-nav__item bottom-nav__item--disabled" aria-disabled="true">
-            <span aria-hidden="true">{item.icon}</span>
-            <span>{item.label}</span>
+          <span key={label} className="bottom-nav__item bottom-nav__item--disabled" aria-disabled="true">
+            <Icon size={20} />
+            <span>{label}</span>
           </span>
         ),
       )}

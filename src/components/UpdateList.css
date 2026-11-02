@@ -13,6 +13,19 @@
   align-items: flex-start;
 }
 
+.update-list__icon {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+}
+
 .update-list__message {
   margin: 0;
   font-size: var(--text-body-size);

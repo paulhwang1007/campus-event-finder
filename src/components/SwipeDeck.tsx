@@ -1,6 +1,7 @@
 import { animate, motion, useMotionValue, useTransform } from 'framer-motion';
 import { useEffect, useRef } from 'react';
 import { EventCard } from './EventCard';
+import { IconChevronLeft, IconChevronRight } from './Icon';
 import type { FeedCard } from '../store/selectors';
 import './SwipeDeck.css';
 
@@ -61,7 +62,7 @@ export function SwipeDeck({ cards, now, onSwipe, onOpen }: Props) {
           className="swipe-deck__chevron swipe-deck__chevron--left"
           onClick={() => commitRef.current?.('pass')}
         >
-          ‹
+          <IconChevronLeft size={18} />
         </button>
         <button
           type="button"
@@ -69,7 +70,7 @@ export function SwipeDeck({ cards, now, onSwipe, onOpen }: Props) {
           className="swipe-deck__chevron swipe-deck__chevron--right"
           onClick={() => commitRef.current?.('save')}
         >
-          ›
+          <IconChevronRight size={18} />
         </button>
       </div>
 

@@ -1,3 +1,16 @@
+.event-details__back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  align-self: flex-start;
+  background: none;
+  border: none;
+  padding: var(--space-1) 0;
+  color: var(--color-text);
+  font-size: var(--text-bodystrong-size);
+  font-weight: var(--text-bodystrong-weight);
+}
+
 .event-details__cancelled {
   background: var(--color-primary-soft);
   color: var(--color-danger);
@@ -15,6 +28,10 @@
 }
 
 .event-details__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
   margin-top: auto;
   padding: var(--space-3);
   border-radius: var(--radius-full);

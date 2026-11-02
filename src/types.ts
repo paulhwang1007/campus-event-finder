@@ -7,10 +7,12 @@ export type CategoryId =
   | 'study'
   | 'services';
 
+export type IconComponent = (props: { size?: number; className?: string }) => React.JSX.Element;
+
 export interface Category {
   id: CategoryId;
   label: string;
-  emoji: string;
+  icon: IconComponent;
   /** CSS gradient used for the card image zone, tinting each category distinctly. */
   gradient: string;
 }

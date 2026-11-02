@@ -43,6 +43,7 @@ a {
 .pill {
   display: inline-flex;
   align-items: center;
+  gap: var(--space-1);
   padding: 2px var(--space-3);
   border-radius: var(--radius-full);
   font-size: var(--text-caption-size);

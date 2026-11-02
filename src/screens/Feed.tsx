@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CategoryChips } from '../components/CategoryChips';
+import { IconCheck } from '../components/Icon';
 import { SwipeDeck } from '../components/SwipeDeck';
 import { useAppStore } from '../store/useAppStore';
 import { getFeed } from '../store/selectors';
@@ -47,7 +48,10 @@ export function Feed() {
 function EmptyState({ filtered, onReset }: { filtered: boolean; onReset: () => void }) {
   return (
     <div className="feed__empty">
-      <p>You're all caught up 🎉</p>
+      <span className="feed__empty-icon">
+        <IconCheck size={20} />
+      </span>
+      <p>You're all caught up</p>
       {filtered && <p>Try "All" categories.</p>}
       <button type="button" className="feed__reset" onClick={onReset}>
         Reset demo
