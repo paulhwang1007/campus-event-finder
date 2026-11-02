@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'react';
 import { EventCard } from './EventCard';
 import { IconChevronLeft, IconChevronRight } from './Icon';
 import type { FeedCard } from '../store/selectors';
+import type { CampusEvent } from '../types';
 import './SwipeDeck.css';
 
 const SWIPE_OFFSET_THRESHOLD = 120;
@@ -18,9 +19,10 @@ interface Props {
   now: Date;
   onSwipe: (eventId: string, action: 'save' | 'pass') => void;
   onOpen: (eventId: string) => void;
+  onJoinEvent: (event: CampusEvent) => void;
 }
 
-export function SwipeDeck({ cards, now, onSwipe, onOpen }: Props) {
+export function SwipeDeck({ cards, now, onSwipe, onOpen, onJoinEvent }: Props) {
   const top = cards[0];
   const next = cards[1];
   const commitRef = useRef<((action: 'save' | 'pass') => void) | null>(null);
@@ -75,23 +77,8 @@ export function SwipeDeck({ cards, now, onSwipe, onOpen }: Props) {
       </div>
 
       <div className="swipe-deck__actions">
-        <div className="swipe-deck__choice-row">
-          <button
-            type="button"
-            className="swipe-deck__choice swipe-deck__choice--skip"
-            onClick={() => commitRef.current?.('pass')}
-          >
-            Skip
-          </button>
-          <button
-            type="button"
-            className="swipe-deck__choice swipe-deck__choice--interested"
-            onClick={() => commitRef.current?.('save')}
-          >
-            Interested
-          </button>
-        </div>
-        <button type="button" className="swipe-deck__join" onClick={() => commitRef.current?.('save')}>
+        <p className="swipe-deck__hint">Swipe left to skip or right to save</p>
+        <button type="button" className="swipe-deck__join" onClick={() => onJoinEvent(top.event)}>
           Join event
         </button>
       </div>

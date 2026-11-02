@@ -90,38 +90,21 @@
   gap: var(--space-3);
 }
 
-.swipe-deck__choice-row {
-  display: flex;
-  justify-content: space-between;
-  padding: 0 var(--space-2);
-}
-
-.swipe-deck__choice {
-  background: none;
-  border: none;
-  padding: var(--space-1);
-}
-
-.swipe-deck__choice--skip {
+.swipe-deck__hint {
+  margin: 0;
+  text-align: center;
   color: var(--color-text-muted);
   font-size: var(--text-bodysm-size);
   line-height: var(--text-bodysm-lh);
-}
-
-.swipe-deck__choice--interested {
-  color: var(--color-primary);
-  font-size: var(--text-label-size);
-  line-height: var(--text-label-lh);
-  font-weight: var(--text-label-weight);
 }
 
 .swipe-deck__join {
   width: 100%;
   padding: var(--space-3);
   border-radius: var(--radius-full);
-  border: 1px solid var(--color-text);
-  background: var(--color-surface);
-  color: var(--color-text);
+  border: 1px solid var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
   font-size: var(--text-bodystrong-size);
   font-weight: var(--text-bodystrong-weight);
 }

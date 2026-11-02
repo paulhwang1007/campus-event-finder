@@ -1,7 +1,8 @@
 .feed__heading {
-  font-size: var(--text-title1-size);
-  line-height: var(--text-title1-lh);
-  font-weight: var(--text-title1-weight);
+  font-size: var(--text-display-size);
+  line-height: var(--text-display-lh);
+  font-weight: var(--text-display-weight);
+  color: var(--color-primary);
   margin: 0;
 }
 

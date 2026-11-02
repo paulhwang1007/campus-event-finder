@@ -10,19 +10,6 @@
   flex-direction: column;
 }
 
-.event-card__image {
-  height: 180px;
-  flex: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.event-card__image-icon {
-  color: var(--color-on-primary);
-  opacity: 0.9;
-}
-
 .event-card__body {
   flex: 1;
   display: flex;
@@ -36,6 +23,12 @@
   display: flex;
   gap: var(--space-2);
   flex-wrap: wrap;
+}
+
+.event-card__category-pill {
+  font-size: var(--text-caption-size);
+  line-height: var(--text-caption-lh);
+  color: var(--color-text-muted);
 }
 
 .event-card__new {
@@ -55,7 +48,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-  color: var(--color-text-muted);
+  color: var(--color-text);
   font-size: var(--text-body-size);
   line-height: var(--text-body-lh);
 }
@@ -71,11 +64,51 @@
   color: var(--color-text-muted);
 }
 
-.event-card__stats {
-  margin-top: auto;
-  padding-top: var(--space-2);
-  border-top: 1px solid var(--color-border);
+.event-card__time-label {
+  color: var(--color-primary);
+  font-weight: var(--text-bodystrong-weight);
+}
+
+.event-card__organizer {
   color: var(--color-text-muted);
   font-size: var(--text-bodysm-size);
   line-height: var(--text-bodysm-lh);
+}
+
+.event-card__image {
+  flex: 1;
+  min-height: 110px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.event-card__image-icon {
+  color: var(--color-on-primary);
+  opacity: 0.9;
+}
+
+.event-card__stats {
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--color-border);
+  color: var(--color-text);
+  font-size: var(--text-bodysm-size);
+  line-height: var(--text-bodysm-lh);
+}
+
+.event-card__spots-left {
+  color: var(--color-primary);
+  font-weight: var(--text-bodystrong-weight);
+}
+
+.event-card__snippet {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-bodysm-size);
+  line-height: var(--text-bodysm-lh);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
 }

@@ -4,24 +4,6 @@
   gap: var(--space-3);
 }
 
-.event-fields__title {
-  font-size: var(--text-title1-size);
-  line-height: var(--text-title1-lh);
-  font-weight: var(--text-title1-weight);
-  margin: 0;
-}
-
-.event-fields__organizer {
-  display: flex;
-  align-items: center;
-  gap: var(--space-1);
-  color: var(--color-text-muted);
-}
-
-.event-fields__organizer svg {
-  flex: none;
-}
-
 .event-fields__now {
   background: var(--color-primary-soft);
   color: var(--color-primary);

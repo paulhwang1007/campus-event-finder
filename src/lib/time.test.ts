@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatEventTime, isOngoing, isPast } from './time';
+import { formatEventTimeParts, isOngoing, isPast } from './time';
 import type { CampusEvent } from '../types';
 
 const now = new Date('2026-10-23T12:00:00.000Z');
@@ -62,28 +62,40 @@ describe('isPast', () => {
   });
 });
 
-describe('formatEventTime', () => {
-  it('shows "Happening now" for an ongoing event', () => {
+describe('formatEventTimeParts', () => {
+  it('returns "Happening now" as the label with no range for an ongoing event', () => {
     const event = makeEvent({
       start: new Date(now.getTime() - 60 * 60 * 1000).toISOString(),
       end: new Date(now.getTime() + 60 * 60 * 1000).toISOString(),
     });
-    expect(formatEventTime(event, now)).toBe('Happening now');
+    expect(formatEventTimeParts(event, now)).toEqual({ label: 'Happening now', range: null });
   });
 
-  it('shows "Today" for a later-today event', () => {
+  it('labels a later-today event "Today" with a start–end range', () => {
     const event = makeEvent({
       start: new Date(now.getTime() + 2 * 60 * 60 * 1000).toISOString(),
       end: new Date(now.getTime() + 3 * 60 * 60 * 1000).toISOString(),
     });
-    expect(formatEventTime(event, now)).toContain('Today');
+    const parts = formatEventTimeParts(event, now);
+    expect(parts.label).toBe('Today');
+    expect(parts.range).toContain('–');
   });
 
-  it('shows "Tomorrow" for a next-day event', () => {
+  it('labels a next-day event "Tomorrow"', () => {
     const event = makeEvent({
       start: new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString(),
       end: new Date(now.getTime() + 25 * 60 * 60 * 1000).toISOString(),
     });
-    expect(formatEventTime(event, now)).toContain('Tomorrow');
+    expect(formatEventTimeParts(event, now).label).toBe('Tomorrow');
+  });
+
+  it('labels a future day with its weekday/date', () => {
+    const event = makeEvent({
+      start: new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000).toISOString(),
+      end: new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000 + 60 * 60 * 1000).toISOString(),
+    });
+    const parts = formatEventTimeParts(event, now);
+    expect(parts.label).not.toMatch(/Today|Tomorrow|Happening now/);
+    expect(parts.range).not.toBeNull();
   });
 });

@@ -110,6 +110,14 @@ export function IconCheck({ size = 16, className }: IconProps) {
   );
 }
 
+export function IconX({ size = 16, className }: IconProps) {
+  return (
+    <svg width={size} height={size} className={className} {...base} aria-hidden="true">
+      <path d="M5 5l10 10M15 5 5 15" />
+    </svg>
+  );
+}
+
 export function IconArrowLeft({ size = 16, className }: IconProps) {
   return (
     <svg width={size} height={size} className={className} {...base} aria-hidden="true">
