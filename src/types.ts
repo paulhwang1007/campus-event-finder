@@ -57,6 +57,18 @@ export interface CampusEvent {
   createdAt: string;
 }
 
+export interface NewEventInput {
+  title: string;
+  description: string;
+  category: CategoryId;
+  organizerType: OrganizerType;
+  organizerName: string;
+  start: string;
+  end: string;
+  locationName: string;
+  capacity?: number;
+}
+
 export type ReportReason = 'inappropriate' | 'misleading' | 'unsafe' | 'not_cornell' | 'other';
 
 export interface Report {

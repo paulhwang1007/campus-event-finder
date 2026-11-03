@@ -1,0 +1,190 @@
+.create-event__back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  align-self: flex-start;
+  background: none;
+  border: none;
+  padding: var(--space-1) 0;
+  color: var(--color-text);
+  font-size: var(--text-bodystrong-size);
+  font-weight: var(--text-bodystrong-weight);
+}
+
+.create-event__heading {
+  font-size: var(--text-display-size);
+  line-height: var(--text-display-lh);
+  font-weight: var(--text-display-weight);
+  color: var(--color-primary);
+  margin: 0;
+}
+
+.create-event__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.create-event__label {
+  font-size: var(--text-bodystrong-size);
+  font-weight: var(--text-bodystrong-weight);
+}
+
+.create-event__input,
+.create-event__textarea {
+  width: 100%;
+  font-family: inherit;
+  font-size: var(--text-body-size);
+  color: var(--color-text);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.create-event__textarea {
+  resize: vertical;
+}
+
+.create-event__input-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.create-event__input-icon svg {
+  position: absolute;
+  left: var(--space-3);
+  color: var(--color-text-muted);
+  pointer-events: none;
+}
+
+.create-event__input--with-icon {
+  padding-left: calc(var(--space-3) * 2 + 16px);
+}
+
+.create-event__chip-row {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.create-event__chip {
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  border-radius: var(--radius-full);
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--text-bodysm-size);
+  font-weight: var(--text-bodystrong-weight);
+}
+
+.create-event__chip--active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.create-event__date-button {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  font-family: inherit;
+  font-size: var(--text-body-size);
+  color: var(--color-text);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.create-event__date-button svg:first-child {
+  flex: none;
+  color: var(--color-text-muted);
+}
+
+.create-event__date-button span {
+  flex: 1;
+  text-align: left;
+}
+
+.create-event__spots-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.create-event__stepper {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  padding: var(--space-2) var(--space-3);
+}
+
+.create-event__stepper button {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.create-event__stepper span {
+  min-width: 1.5em;
+  text-align: center;
+  font-weight: var(--text-bodystrong-weight);
+}
+
+.create-event__stepper--disabled {
+  color: var(--color-text-muted);
+  font-size: var(--text-bodysm-size);
+}
+
+.create-event__limit-toggle {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--color-primary);
+  font-size: var(--text-bodysm-size);
+  font-weight: var(--text-bodystrong-weight);
+}
+
+.create-event__policy {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  font-size: var(--text-bodysm-size);
+  line-height: var(--text-bodysm-lh);
+  color: var(--color-text);
+}
+
+.create-event__policy input {
+  margin-top: 2px;
+  accent-color: var(--color-primary);
+}
+
+.create-event__error {
+  margin: 0;
+  color: var(--color-danger);
+  font-size: var(--text-caption-size);
+}
+
+.create-event__submit {
+  flex: none;
+  width: 100%;
+  padding: var(--space-3);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font-size: var(--text-bodystrong-size);
+  font-weight: var(--text-bodystrong-weight);
+}

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { generateSeedEvents } from '../data/seedEvents';
-import type { CampusEvent, User } from '../types';
+import type { CampusEvent, NewEventInput, User } from '../types';
 
 const DEFAULT_USER: User = {
   netId: 'test123',
@@ -22,6 +22,7 @@ interface AppState {
   swipe: (eventId: string, action: 'save' | 'pass') => void;
   toggleSaved: (eventId: string) => void;
   markUpdatesSeen: (eventId: string) => void;
+  createEvent: (input: NewEventInput) => string;
   resetDemo: () => void;
 }
 
@@ -71,6 +72,31 @@ export const useAppStore = create<AppState>()(
         set({
           lastSeenUpdateAt: { ...get().lastSeenUpdateAt, [eventId]: latest.createdAt },
         });
+      },
+
+      createEvent: (input) => {
+        const now = new Date().toISOString();
+        const id = crypto.randomUUID();
+        const user = get().user;
+        const event: CampusEvent = {
+          id,
+          title: input.title,
+          description: input.description,
+          category: input.category,
+          organizerType: input.organizerType,
+          organizerName: input.organizerName,
+          organizerNetId: user?.netId ?? '',
+          start: input.start,
+          end: input.end,
+          locationName: input.locationName,
+          capacity: input.capacity,
+          interestedCount: 0,
+          updates: [],
+          cancelled: false,
+          createdAt: now,
+        };
+        set({ events: [...get().events, event] });
+        return id;
       },
 
       resetDemo: () => {

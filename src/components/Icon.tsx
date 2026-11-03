@@ -57,6 +57,14 @@ export function IconPlus({ size = 18, className }: IconProps) {
   );
 }
 
+export function IconMinus({ size = 18, className }: IconProps) {
+  return (
+    <svg width={size} height={size} className={className} {...base} aria-hidden="true">
+      <path d="M4 10h12" />
+    </svg>
+  );
+}
+
 export function IconBookmark({ size = 18, className }: IconProps) {
   return (
     <svg width={size} height={size} className={className} {...base} aria-hidden="true">

@@ -4,7 +4,7 @@ import './BottomNav.css';
 
 const ITEMS = [
   { label: 'Discover', Icon: IconCompass, to: '/feed' },
-  { label: 'Create', Icon: IconPlus, to: null },
+  { label: 'Create', Icon: IconPlus, to: '/create' },
   { label: 'Interested', Icon: IconBookmark, to: null },
   { label: 'Profile', Icon: IconUser, to: null },
 ] as const;
