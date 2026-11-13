@@ -12,6 +12,15 @@ const base = {
   strokeLinejoin: 'round' as const,
 };
 
+export function IconPencil({ size = 16, className }: IconProps) {
+  return (
+    <svg width={size} height={size} className={className} {...base} aria-hidden="true">
+      <path d="M12.5 3.5 16 7l-8.5 8.5L4 16l.5-3.5Z" />
+      <path d="M11 5l4 4" />
+    </svg>
+  );
+}
+
 export function IconCalendar({ size = 16, className }: IconProps) {
   return (
     <svg width={size} height={size} className={className} {...base} aria-hidden="true">

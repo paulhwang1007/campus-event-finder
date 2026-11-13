@@ -23,6 +23,8 @@ export interface User {
   netId: string;
   name: string;
   classYear: ClassYear;
+  major?: string;
+  bio?: string;
   interests: CategoryId[];
   verified: boolean;
 }

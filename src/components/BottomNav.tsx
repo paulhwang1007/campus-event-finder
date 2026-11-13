@@ -6,29 +6,22 @@ const ITEMS = [
   { label: 'Discover', Icon: IconCompass, to: '/feed' },
   { label: 'Create', Icon: IconPlus, to: '/create' },
   { label: 'Interested', Icon: IconBookmark, to: '/interested' },
-  { label: 'Profile', Icon: IconUser, to: null },
+  { label: 'Profile', Icon: IconUser, to: '/profile' },
 ] as const;
 
 export function BottomNav() {
   return (
     <nav className="bottom-nav" aria-label="Main">
-      {ITEMS.map(({ label, Icon, to }) =>
-        to ? (
-          <NavLink
-            key={label}
-            to={to}
-            className={({ isActive }) => `bottom-nav__item${isActive ? ' bottom-nav__item--active' : ''}`}
-          >
-            <Icon size={20} />
-            <span>{label}</span>
-          </NavLink>
-        ) : (
-          <span key={label} className="bottom-nav__item bottom-nav__item--disabled" aria-disabled="true">
-            <Icon size={20} />
-            <span>{label}</span>
-          </span>
-        ),
-      )}
+      {ITEMS.map(({ label, Icon, to }) => (
+        <NavLink
+          key={label}
+          to={to}
+          className={({ isActive }) => `bottom-nav__item${isActive ? ' bottom-nav__item--active' : ''}`}
+        >
+          <Icon size={20} />
+          <span>{label}</span>
+        </NavLink>
+      ))}
     </nav>
   );
 }

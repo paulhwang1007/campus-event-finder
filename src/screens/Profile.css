@@ -1,0 +1,213 @@
+.profile__heading {
+  font-size: var(--text-display-size);
+  line-height: var(--text-display-lh);
+  font-weight: var(--text-display-weight);
+  color: var(--color-primary);
+  margin: 0;
+}
+
+.profile__header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.profile__avatar {
+  flex: none;
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+}
+
+.profile__identity {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.profile__name {
+  font-size: var(--text-headline-size);
+  line-height: var(--text-headline-lh);
+  font-weight: var(--text-headline-weight);
+}
+
+.profile__subtitle,
+.profile__bio {
+  color: var(--color-text-muted);
+  font-size: var(--text-bodysm-size);
+  line-height: var(--text-bodysm-lh);
+}
+
+.profile__edit {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+}
+
+.profile__edit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.profile__stats {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.profile__stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: var(--space-3) var(--space-2);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.profile__stat--active {
+  border-color: var(--color-primary);
+}
+
+.profile__stat-count {
+  font-size: var(--text-title2-size);
+  line-height: var(--text-title2-lh);
+  font-weight: var(--text-title2-weight);
+}
+
+.profile__stat-label {
+  color: var(--color-text-muted);
+  font-size: var(--text-caption-size);
+  font-weight: var(--text-caption-weight);
+}
+
+.profile__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.profile__section-label {
+  font-size: var(--text-bodystrong-size);
+  font-weight: var(--text-bodystrong-weight);
+}
+
+.profile__tabs {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.profile__tab {
+  flex: 1;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  border-radius: var(--radius-full);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-bodysm-size);
+  font-weight: var(--text-bodystrong-weight);
+}
+
+.profile__tab--active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.profile__empty {
+  color: var(--color-text-muted);
+  font-size: var(--text-bodysm-size);
+  margin: 0;
+}
+
+.profile__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.profile__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  text-align: left;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+}
+
+.profile__row-date {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.profile__row-month {
+  width: 100%;
+  text-align: center;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font-size: 10px;
+  font-weight: var(--text-caption-weight);
+  line-height: 1.4;
+}
+
+.profile__row-day {
+  font-size: var(--text-bodystrong-size);
+  font-weight: var(--text-title2-weight);
+  line-height: 1.6;
+}
+
+.profile__row-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.profile__row-title {
+  font-size: var(--text-bodystrong-size);
+  font-weight: var(--text-bodystrong-weight);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile__row-subtitle {
+  color: var(--color-text-muted);
+  font-size: var(--text-caption-size);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile__row-chevron {
+  flex: none;
+  color: var(--color-text-muted);
+}

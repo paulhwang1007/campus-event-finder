@@ -5,6 +5,7 @@ import { EventConfirm } from './screens/EventConfirm';
 import { EventDetails } from './screens/EventDetails';
 import { Feed } from './screens/Feed';
 import { Interested } from './screens/Interested';
+import { Profile } from './screens/Profile';
 
 function Layout() {
   return (
@@ -22,6 +23,7 @@ function App() {
         <Route path="/feed" element={<Feed />} />
         <Route path="/create" element={<CreateEvent />} />
         <Route path="/interested" element={<Interested />} />
+        <Route path="/profile" element={<Profile />} />
         <Route path="/events/:id" element={<EventDetails />} />
         <Route path="/events/:id/confirm" element={<EventConfirm />} />
         <Route path="*" element={<Navigate to="/feed" replace />} />

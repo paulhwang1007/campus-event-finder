@@ -33,8 +33,3 @@
 .bottom-nav__item--active {
   color: var(--color-primary);
 }
-
-.bottom-nav__item--disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}

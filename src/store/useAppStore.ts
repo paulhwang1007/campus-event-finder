@@ -7,6 +7,8 @@ const DEFAULT_USER: User = {
   netId: 'test123',
   name: 'Test User',
   classYear: 'Sophomore',
+  major: 'Info Sci',
+  bio: 'Always down for something low-key after class.',
   interests: ['food', 'games', 'outdoors'],
   verified: true,
 };

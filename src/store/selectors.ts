@@ -77,6 +77,30 @@ export function getInterested(
   return { going: sortByStart(going, now), interested: sortByStart(interested, now) };
 }
 
+interface ProfileState {
+  user: User | null;
+  events: CampusEvent[];
+  confirmedIds: string[];
+  reportedIds: string[];
+}
+
+export function getProfileEvents(
+  state: ProfileState,
+  now: Date,
+): { going: CampusEvent[]; hosting: CampusEvent[]; attended: CampusEvent[] } {
+  const { user, events, confirmedIds, reportedIds } = state;
+  const confirmed = events.filter((e) => confirmedIds.includes(e.id) && !reportedIds.includes(e.id));
+  const going = sortByStart(
+    confirmed.filter((e) => !isPast(e, now)),
+    now,
+  );
+  const attended = confirmed
+    .filter((e) => isPast(e, now))
+    .sort((a, b) => new Date(b.start).getTime() - new Date(a.start).getTime());
+  const hosting = user ? sortByStart(events.filter((e) => e.organizerNetId === user.netId), now) : [];
+  return { going, hosting, attended };
+}
+
 export function hasUnreadUpdate(
   event: CampusEvent,
   lastSeenUpdateAt: Record<string, string>,

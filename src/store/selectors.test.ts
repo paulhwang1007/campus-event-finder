@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getFeed, getInterested, hasUnreadUpdate, spotsLeft } from './selectors';
+import { getFeed, getInterested, getProfileEvents, hasUnreadUpdate, spotsLeft } from './selectors';
 import type { CampusEvent, User } from '../types';
 
 const now = new Date('2026-10-23T12:00:00.000Z');
@@ -124,6 +124,53 @@ describe('getInterested', () => {
       now,
     );
     expect(result.interested.map((e) => e.id)).toEqual(['ongoing', 'later']);
+  });
+});
+
+describe('getProfileEvents', () => {
+  it('splits confirmed events into going (upcoming) and attended (past)', () => {
+    const events = [
+      makeEvent('upcoming-confirmed', { start: hours(1), end: hours(2) }),
+      makeEvent('past-confirmed', { start: hours(-5), end: hours(-4) }),
+      makeEvent('not-confirmed', {}),
+    ];
+    const result = getProfileEvents(
+      { user, events, confirmedIds: ['upcoming-confirmed', 'past-confirmed'], reportedIds: [] },
+      now,
+    );
+    expect(result.going.map((e) => e.id)).toEqual(['upcoming-confirmed']);
+    expect(result.attended.map((e) => e.id)).toEqual(['past-confirmed']);
+  });
+
+  it('lists events the user organized as hosting, regardless of confirmation', () => {
+    const events = [
+      makeEvent('hosted', { organizerNetId: user.netId }),
+      makeEvent('someone-elses', { organizerNetId: 'other456' }),
+    ];
+    const result = getProfileEvents({ user, events, confirmedIds: [], reportedIds: [] }, now);
+    expect(result.hosting.map((e) => e.id)).toEqual(['hosted']);
+  });
+
+  it('sorts attended events most-recent-first', () => {
+    const events = [
+      makeEvent('older', { start: hours(-10), end: hours(-9) }),
+      makeEvent('newer', { start: hours(-2), end: hours(-1) }),
+    ];
+    const result = getProfileEvents(
+      { user, events, confirmedIds: ['older', 'newer'], reportedIds: [] },
+      now,
+    );
+    expect(result.attended.map((e) => e.id)).toEqual(['newer', 'older']);
+  });
+
+  it('excludes reported events from going and attended', () => {
+    const events = [makeEvent('reported-confirmed', {})];
+    const result = getProfileEvents(
+      { user, events, confirmedIds: ['reported-confirmed'], reportedIds: ['reported-confirmed'] },
+      now,
+    );
+    expect(result.going).toEqual([]);
+    expect(result.attended).toEqual([]);
   });
 });
 
