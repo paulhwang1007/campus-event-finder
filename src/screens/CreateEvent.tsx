@@ -3,7 +3,15 @@ import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { categories } from '../data/categories';
 import { DateTimePicker, formatTime } from '../components/DateTimePicker';
-import { IconArrowLeft, IconCalendar, IconChevronRight, IconMapPin, IconMinus, IconPlus } from '../components/Icon';
+import {
+  IconArrowLeft,
+  IconCalendar,
+  IconCheck,
+  IconChevronRight,
+  IconMapPin,
+  IconMinus,
+  IconPlus,
+} from '../components/Icon';
 import { combineDateAndTime, validateEventForm, type EventDraft } from '../lib/validation';
 import { formatDayHeading } from '../lib/time';
 import { useAppStore } from '../store/useAppStore';
@@ -39,9 +47,10 @@ export function CreateEvent() {
   const navigate = useNavigate();
   const user = useAppStore((s) => s.user);
   const createEvent = useAppStore((s) => s.createEvent);
-  const [view, setView] = useState<'form' | 'datetime'>('form');
+  const [view, setView] = useState<'form' | 'datetime' | 'success'>('form');
   const [draft, setDraft] = useState<EventDraft>(EMPTY_DRAFT);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [postedId, setPostedId] = useState<string | null>(null);
   const fieldRefs = useRef<Record<string, HTMLElement | null>>({});
 
   function update<K extends keyof EventDraft>(key: K, value: EventDraft[K]) {
@@ -76,7 +85,8 @@ export function CreateEvent() {
       locationName: draft.locationName.trim(),
       capacity: draft.capacityMode === 'limited' ? Number(draft.capacityValue) : undefined,
     });
-    navigate(`/events/${newId}`);
+    setPostedId(newId);
+    setView('success');
   }
 
   if (view === 'datetime') {
@@ -91,6 +101,20 @@ export function CreateEvent() {
           setView('form');
         }}
       />
+    );
+  }
+
+  if (view === 'success') {
+    return (
+      <div className="screen create-event__success">
+        <span className="create-event__success-icon">
+          <IconCheck size={32} />
+        </span>
+        <h1 className="create-event__success-heading">Event Posted</h1>
+        <button type="button" className="create-event__submit" onClick={() => navigate(`/events/${postedId}`)}>
+          View event
+        </button>
+      </div>
     );
   }
 

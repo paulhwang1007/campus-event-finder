@@ -17,10 +17,12 @@ interface AppState {
   savedIds: string[];
   passedIds: string[];
   reportedIds: string[];
+  confirmedIds: string[];
   lastSeenUpdateAt: Record<string, string>;
 
   swipe: (eventId: string, action: 'save' | 'pass') => void;
   toggleSaved: (eventId: string) => void;
+  confirmAttendance: (eventId: string) => void;
   markUpdatesSeen: (eventId: string) => void;
   createEvent: (input: NewEventInput) => string;
   resetDemo: () => void;
@@ -34,6 +36,7 @@ export const useAppStore = create<AppState>()(
       savedIds: [],
       passedIds: [],
       reportedIds: [],
+      confirmedIds: [],
       lastSeenUpdateAt: {},
 
       swipe: (eventId, action) => {
@@ -53,15 +56,28 @@ export const useAppStore = create<AppState>()(
       },
 
       toggleSaved: (eventId) => {
-        const { savedIds, events } = get();
+        const { savedIds, confirmedIds, events } = get();
         const isSaved = savedIds.includes(eventId);
         set({
           savedIds: isSaved ? savedIds.filter((id) => id !== eventId) : [...savedIds, eventId],
+          confirmedIds: isSaved ? confirmedIds.filter((id) => id !== eventId) : confirmedIds,
           events: events.map((e) =>
             e.id === eventId
               ? { ...e, interestedCount: e.interestedCount + (isSaved ? -1 : 1) }
               : e,
           ),
+        });
+      },
+
+      confirmAttendance: (eventId) => {
+        const { savedIds, confirmedIds, events } = get();
+        const alreadySaved = savedIds.includes(eventId);
+        set({
+          savedIds: alreadySaved ? savedIds : [...savedIds, eventId],
+          confirmedIds: confirmedIds.includes(eventId) ? confirmedIds : [...confirmedIds, eventId],
+          events: alreadySaved
+            ? events
+            : events.map((e) => (e.id === eventId ? { ...e, interestedCount: e.interestedCount + 1 } : e)),
         });
       },
 
@@ -106,6 +122,7 @@ export const useAppStore = create<AppState>()(
           savedIds: [],
           passedIds: [],
           reportedIds: [],
+          confirmedIds: [],
           lastSeenUpdateAt: {},
         });
       },

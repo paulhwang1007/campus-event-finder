@@ -16,6 +16,15 @@ interface FeedState {
   reportedIds: string[];
 }
 
+function sortByStart(events: CampusEvent[], now: Date): CampusEvent[] {
+  return [...events].sort((a, b) => {
+    const aOngoing = isOngoing(a, now);
+    const bOngoing = isOngoing(b, now);
+    if (aOngoing !== bOngoing) return aOngoing ? -1 : 1;
+    return new Date(a.start).getTime() - new Date(b.start).getTime();
+  });
+}
+
 export function getFeed(state: FeedState, now: Date, categoryFilter?: CategoryId | 'all'): FeedCard[] {
   const { user, events, savedIds, passedIds, reportedIds } = state;
   const excluded = new Set([...savedIds, ...passedIds, ...reportedIds]);
@@ -29,18 +38,8 @@ export function getFeed(state: FeedState, now: Date, categoryFilter?: CategoryId
   });
 
   const interests = new Set(user?.interests ?? []);
-  const matching = visible.filter((e) => interests.has(e.category));
-  const rest = visible.filter((e) => !interests.has(e.category));
-
-  const byStart = (a: CampusEvent, b: CampusEvent) => {
-    const aOngoing = isOngoing(a, now);
-    const bOngoing = isOngoing(b, now);
-    if (aOngoing !== bOngoing) return aOngoing ? -1 : 1;
-    return new Date(a.start).getTime() - new Date(b.start).getTime();
-  };
-
-  matching.sort(byStart);
-  rest.sort(byStart);
+  const matching = sortByStart(visible.filter((e) => interests.has(e.category)), now);
+  const rest = sortByStart(visible.filter((e) => !interests.has(e.category)), now);
 
   return [
     ...matching.map((event) => ({ event, isOutsideInterests: false })),
@@ -56,6 +55,26 @@ export function getSaved(state: FeedState, now: Date): { upcoming: CampusEvent[]
     upcoming: saved.filter((e) => new Date(e.end) >= now),
     past: saved.filter((e) => new Date(e.end) < now),
   };
+}
+
+interface InterestedState {
+  events: CampusEvent[];
+  savedIds: string[];
+  confirmedIds: string[];
+  reportedIds: string[];
+}
+
+export function getInterested(
+  state: InterestedState,
+  now: Date,
+): { going: CampusEvent[]; interested: CampusEvent[] } {
+  const { events, savedIds, confirmedIds, reportedIds } = state;
+  const saved = events.filter(
+    (e) => savedIds.includes(e.id) && !reportedIds.includes(e.id) && !isPast(e, now),
+  );
+  const going = saved.filter((e) => confirmedIds.includes(e.id));
+  const interested = saved.filter((e) => !confirmedIds.includes(e.id));
+  return { going: sortByStart(going, now), interested: sortByStart(interested, now) };
 }
 
 export function hasUnreadUpdate(

@@ -12,7 +12,7 @@ interface Props {
 }
 
 export function JoinConfirmModal({ event, onClose }: Props) {
-  const toggleSaved = useAppStore((s) => s.toggleSaved);
+  const confirmAttendance = useAppStore((s) => s.confirmAttendance);
   const [confirmed, setConfirmed] = useState(false);
   const now = useMemo(() => new Date(), []);
 
@@ -65,7 +65,7 @@ export function JoinConfirmModal({ event, onClose }: Props) {
               type="button"
               className="join-modal__cta"
               onClick={() => {
-                toggleSaved(event.id);
+                confirmAttendance(event.id);
                 setConfirmed(true);
               }}
             >

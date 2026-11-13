@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getFeed, hasUnreadUpdate, spotsLeft } from './selectors';
+import { getFeed, getInterested, hasUnreadUpdate, spotsLeft } from './selectors';
 import type { CampusEvent, User } from '../types';
 
 const now = new Date('2026-10-23T12:00:00.000Z');
@@ -73,6 +73,57 @@ describe('getFeed', () => {
     ];
     const feed = getFeed({ user, events, savedIds: [], passedIds: [], reportedIds: [] }, now, 'arts');
     expect(feed.map((c) => c.event.id)).toEqual(['arts-event']);
+  });
+});
+
+describe('getInterested', () => {
+  it('splits saved events into going (confirmed) and interested (not confirmed)', () => {
+    const events = [
+      makeEvent('confirmed', {}),
+      makeEvent('just-interested', {}),
+      makeEvent('not-saved', {}),
+    ];
+    const result = getInterested(
+      {
+        events,
+        savedIds: ['confirmed', 'just-interested'],
+        confirmedIds: ['confirmed'],
+        reportedIds: [],
+      },
+      now,
+    );
+    expect(result.going.map((e) => e.id)).toEqual(['confirmed']);
+    expect(result.interested.map((e) => e.id)).toEqual(['just-interested']);
+  });
+
+  it('excludes past and reported events from both groups', () => {
+    const events = [
+      makeEvent('past-confirmed', { start: hours(-5), end: hours(-4) }),
+      makeEvent('reported-interested', {}),
+    ];
+    const result = getInterested(
+      {
+        events,
+        savedIds: ['past-confirmed', 'reported-interested'],
+        confirmedIds: ['past-confirmed'],
+        reportedIds: ['reported-interested'],
+      },
+      now,
+    );
+    expect(result.going).toEqual([]);
+    expect(result.interested).toEqual([]);
+  });
+
+  it('sorts each group by start time, ongoing first', () => {
+    const events = [
+      makeEvent('later', { start: hours(3), end: hours(4) }),
+      makeEvent('ongoing', { start: hours(-1), end: hours(1) }),
+    ];
+    const result = getInterested(
+      { events, savedIds: ['later', 'ongoing'], confirmedIds: [], reportedIds: [] },
+      now,
+    );
+    expect(result.interested.map((e) => e.id)).toEqual(['ongoing', 'later']);
   });
 });
 

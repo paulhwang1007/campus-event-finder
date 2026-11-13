@@ -3,6 +3,7 @@ import { BottomNav } from './components/BottomNav';
 import { CreateEvent } from './screens/CreateEvent';
 import { EventDetails } from './screens/EventDetails';
 import { Feed } from './screens/Feed';
+import { Interested } from './screens/Interested';
 
 function Layout() {
   return (
@@ -19,6 +20,7 @@ function App() {
       <Route element={<Layout />}>
         <Route path="/feed" element={<Feed />} />
         <Route path="/create" element={<CreateEvent />} />
+        <Route path="/interested" element={<Interested />} />
         <Route path="/events/:id" element={<EventDetails />} />
         <Route path="*" element={<Navigate to="/feed" replace />} />
       </Route>
