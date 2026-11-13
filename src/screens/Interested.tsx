@@ -3,10 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { CategoryChips } from '../components/CategoryChips';
 import { IconCheck } from '../components/Icon';
 import { InterestedCard } from '../components/InterestedCard';
-import { JoinConfirmModal } from '../components/JoinConfirmModal';
 import { getInterested, isOngoing } from '../store/selectors';
 import { useAppStore } from '../store/useAppStore';
-import type { CampusEvent, CategoryId } from '../types';
+import type { CategoryId } from '../types';
 import './Interested.css';
 
 export function Interested() {
@@ -17,7 +16,6 @@ export function Interested() {
   const reportedIds = useAppStore((s) => s.reportedIds);
   const toggleSaved = useAppStore((s) => s.toggleSaved);
   const [category, setCategory] = useState<CategoryId | 'all'>('all');
-  const [joinEvent, setJoinEvent] = useState<CampusEvent | null>(null);
 
   const now = useMemo(() => new Date(), [events, savedIds, confirmedIds, reportedIds]);
   const { going, interested } = useMemo(
@@ -40,46 +38,40 @@ export function Interested() {
   const isEmpty = going.length === 0 && interested.length === 0;
 
   return (
-    <>
-      <div className="screen">
-        <h1 className="interested__heading">Interested Events</h1>
+    <div className="screen">
+      <h1 className="interested__heading">Interested Events</h1>
 
-        {isEmpty ? (
-          <div className="interested__empty">
-            <span className="interested__empty-icon">
-              <IconCheck size={20} />
-            </span>
-            <p>Nothing saved yet.</p>
-            <p>Swipe right on something you like on Discover.</p>
-            <button type="button" className="interested__empty-cta" onClick={() => navigate('/feed')}>
-              Go to Discover
-            </button>
+      {isEmpty ? (
+        <div className="interested__empty">
+          <span className="interested__empty-icon">
+            <IconCheck size={20} />
+          </span>
+          <p>Nothing saved yet.</p>
+          <p>Swipe right on something you like on Discover.</p>
+          <button type="button" className="interested__empty-cta" onClick={() => navigate('/feed')}>
+            Go to Discover
+          </button>
+        </div>
+      ) : (
+        <>
+          <CategoryChips value={category} onChange={setCategory} />
+
+          <div className="interested__list">
+            {list.map((event) => (
+              <InterestedCard
+                key={event.id}
+                event={event}
+                now={now}
+                isGoing={confirmedSet.has(event.id)}
+                onOpen={() => navigate(`/events/${event.id}`)}
+                onJoin={() => navigate(`/events/${event.id}/confirm`)}
+                onLeave={() => toggleSaved(event.id)}
+                onRemove={() => toggleSaved(event.id)}
+              />
+            ))}
           </div>
-        ) : (
-          <>
-            <CategoryChips value={category} onChange={setCategory} />
-
-            <div className="interested__list">
-              {list.map((event) => (
-                <InterestedCard
-                  key={event.id}
-                  event={event}
-                  now={now}
-                  isGoing={confirmedSet.has(event.id)}
-                  onOpen={() => navigate(`/events/${event.id}`)}
-                  onJoin={() => setJoinEvent(event)}
-                  onLeave={() => toggleSaved(event.id)}
-                  onRemove={() => toggleSaved(event.id)}
-                />
-              ))}
-            </div>
-          </>
-        )}
-      </div>
-
-      {/* Sibling of .screen, not nested inside it: .screen has overflow-y:auto, which
-          would clip this absolutely-positioned overlay even though it's sized against #root. */}
-      {joinEvent && <JoinConfirmModal event={joinEvent} onClose={() => setJoinEvent(null)} />}
-    </>
+        </>
+      )}
+    </div>
   );
 }
