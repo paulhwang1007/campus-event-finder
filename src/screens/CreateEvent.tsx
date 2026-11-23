@@ -51,6 +51,8 @@ export function CreateEvent() {
   const [draft, setDraft] = useState<EventDraft>(EMPTY_DRAFT);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [postedId, setPostedId] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const fieldRefs = useRef<Record<string, HTMLElement | null>>({});
 
   function update<K extends keyof EventDraft>(key: K, value: EventDraft[K]) {
@@ -62,7 +64,8 @@ export function CreateEvent() {
     navigate(-1);
   }
 
-  function handleSubmit() {
+  async function handleSubmit() {
+    if (submitting) return;
     const now = new Date();
     const formErrors = validateEventForm(draft, now);
     setErrors(formErrors);
@@ -74,19 +77,28 @@ export function CreateEvent() {
 
     const start = combineDateAndTime(draft.date!, draft.startTime)!;
     const end = combineDateAndTime(draft.date!, draft.endTime)!;
-    const newId = createEvent({
-      title: draft.title.trim(),
-      description: draft.description.trim(),
-      category: draft.category!,
-      organizerType: draft.organizerType,
-      organizerName: draft.organizerType === 'club' ? draft.clubName.trim() : (user?.name ?? 'You'),
-      start: start.toISOString(),
-      end: end.toISOString(),
-      locationName: draft.locationName.trim(),
-      capacity: draft.capacityMode === 'limited' ? Number(draft.capacityValue) : undefined,
-    });
-    setPostedId(newId);
-    setView('success');
+    setSubmitting(true);
+    setSubmitError(null);
+    try {
+      const newId = await createEvent({
+        title: draft.title.trim(),
+        description: draft.description.trim(),
+        category: draft.category!,
+        organizerType: draft.organizerType,
+        organizerName: draft.organizerType === 'club' ? draft.clubName.trim() : (user?.name ?? 'You'),
+        start: start.toISOString(),
+        end: end.toISOString(),
+        locationName: draft.locationName.trim(),
+        capacity: draft.capacityMode === 'limited' ? Number(draft.capacityValue) : undefined,
+      });
+      setPostedId(newId);
+      setView('success');
+    } catch (err) {
+      console.error('Failed to create event', err);
+      setSubmitError("Couldn't post your event. Check your connection and try again.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   if (view === 'datetime') {
@@ -264,8 +276,9 @@ export function CreateEvent() {
       </label>
       {errors.policy && <p className="create-event__error">{errors.policy}</p>}
 
-      <button type="button" className="create-event__submit" onClick={handleSubmit}>
-        Post event
+      {submitError && <p className="create-event__error">{submitError}</p>}
+      <button type="button" className="create-event__submit" onClick={handleSubmit} disabled={submitting}>
+        {submitting ? 'Posting…' : 'Post event'}
       </button>
     </div>
   );

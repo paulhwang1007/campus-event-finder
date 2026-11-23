@@ -38,8 +38,10 @@ export function getFeed(state: FeedState, now: Date, categoryFilter?: CategoryId
   });
 
   const interests = new Set(user?.interests ?? []);
-  const matching = sortByStart(visible.filter((e) => interests.has(e.category)), now);
-  const rest = sortByStart(visible.filter((e) => !interests.has(e.category)), now);
+  // A user who hasn't picked interests yet sees everything as a match.
+  const matches = (e: CampusEvent) => interests.size === 0 || interests.has(e.category);
+  const matching = sortByStart(visible.filter(matches), now);
+  const rest = sortByStart(visible.filter((e) => !matches(e)), now);
 
   return [
     ...matching.map((event) => ({ event, isOutsideInterests: false })),

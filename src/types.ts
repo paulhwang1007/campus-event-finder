@@ -22,7 +22,7 @@ export type ClassYear = 'First-year' | 'Sophomore' | 'Junior' | 'Senior' | 'Tran
 export interface User {
   netId: string;
   name: string;
-  classYear: ClassYear;
+  classYear?: ClassYear;
   major?: string;
   bio?: string;
   interests: CategoryId[];

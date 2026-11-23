@@ -17,7 +17,7 @@ export function Feed() {
   const passedIds = useAppStore((s) => s.passedIds);
   const reportedIds = useAppStore((s) => s.reportedIds);
   const swipe = useAppStore((s) => s.swipe);
-  const resetDemo = useAppStore((s) => s.resetDemo);
+  const resetPassed = useAppStore((s) => s.resetPassed);
 
   const now = useMemo(() => new Date(), [events, savedIds, passedIds, reportedIds]);
 
@@ -40,13 +40,16 @@ export function Feed() {
           onJoinEvent={(event) => navigate(`/events/${event.id}/confirm`)}
         />
       ) : (
-        <EmptyState filtered={category !== 'all'} onReset={resetDemo} />
+        <EmptyState
+          filtered={category !== 'all'}
+          onReset={passedIds.length > 0 ? resetPassed : undefined}
+        />
       )}
     </div>
   );
 }
 
-function EmptyState({ filtered, onReset }: { filtered: boolean; onReset: () => void }) {
+function EmptyState({ filtered, onReset }: { filtered: boolean; onReset?: () => void }) {
   return (
     <div className="feed__empty">
       <span className="feed__empty-icon">
@@ -54,9 +57,11 @@ function EmptyState({ filtered, onReset }: { filtered: boolean; onReset: () => v
       </span>
       <p>You're all caught up</p>
       {filtered && <p>Try "All" categories.</p>}
-      <button type="button" className="feed__reset" onClick={onReset}>
-        Reset demo
-      </button>
+      {onReset && (
+        <button type="button" className="feed__reset" onClick={onReset}>
+          Show passed events again
+        </button>
+      )}
     </div>
   );
 }

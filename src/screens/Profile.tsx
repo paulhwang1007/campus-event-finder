@@ -2,6 +2,7 @@ import { format } from 'date-fns';
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { IconChevronRight, IconPencil, IconUser } from '../components/Icon';
+import { signOut } from '../lib/supabase';
 import { formatDayHeading } from '../lib/time';
 import { getProfileEvents } from '../store/selectors';
 import { useAppStore } from '../store/useAppStore';
@@ -112,6 +113,10 @@ export function Profile() {
           </div>
         )}
       </div>
+
+      <button type="button" className="profile__signout" onClick={() => void signOut()}>
+        Sign out
+      </button>
     </div>
   );
 }

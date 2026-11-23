@@ -1,137 +1,175 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { generateSeedEvents } from '../data/seedEvents';
+import * as api from '../lib/api';
 import type { CampusEvent, NewEventInput, User } from '../types';
 
-const DEFAULT_USER: User = {
-  netId: 'test123',
-  name: 'Test User',
-  classYear: 'Sophomore',
-  major: 'Info Sci',
-  bio: 'Always down for something low-key after class.',
-  interests: ['food', 'games', 'outdoors'],
-  verified: true,
-};
+type LoadStatus = 'idle' | 'loading' | 'ready' | 'error';
+
+/** Server-backed fields that an optimistic update may need to roll back. */
+type Snapshot = Pick<AppState, 'events' | 'savedIds' | 'passedIds' | 'confirmedIds'>;
 
 interface AppState {
+  status: LoadStatus;
+  error: string | null;
   user: User | null;
   events: CampusEvent[];
-  savedIds: string[];
+  savedIds: string[]; // 'interested' or 'going'
   passedIds: string[];
+  confirmedIds: string[]; // 'going'
+  // Local-only (not stored on the server yet):
   reportedIds: string[];
-  confirmedIds: string[];
   lastSeenUpdateAt: Record<string, string>;
 
+  load: () => Promise<void>;
+  clear: () => void;
   swipe: (eventId: string, action: 'save' | 'pass') => void;
   toggleSaved: (eventId: string) => void;
   confirmAttendance: (eventId: string) => void;
+  resetPassed: () => void;
   markUpdatesSeen: (eventId: string) => void;
-  createEvent: (input: NewEventInput) => string;
-  resetDemo: () => void;
+  createEvent: (input: NewEventInput) => Promise<string>;
 }
+
+function bumpCount(events: CampusEvent[], eventId: string, delta: number): CampusEvent[] {
+  return events.map((e) =>
+    e.id === eventId ? { ...e, interestedCount: Math.max(0, e.interestedCount + delta) } : e,
+  );
+}
+
+const EMPTY_SERVER_STATE = {
+  user: null,
+  events: [],
+  savedIds: [],
+  passedIds: [],
+  confirmedIds: [],
+};
 
 export const useAppStore = create<AppState>()(
   persist(
-    (set, get) => ({
-      user: DEFAULT_USER,
-      events: generateSeedEvents(new Date()),
-      savedIds: [],
-      passedIds: [],
-      reportedIds: [],
-      confirmedIds: [],
-      lastSeenUpdateAt: {},
+    (set, get) => {
+      /** Apply a local change right away, then sync it; undo the change if the request fails. */
+      function optimistic(patch: Partial<Snapshot>, request: () => Promise<void>) {
+        const { events, savedIds, passedIds, confirmedIds } = get();
+        const before: Snapshot = { events, savedIds, passedIds, confirmedIds };
+        set(patch);
+        request().catch((err: unknown) => {
+          console.error('Failed to save change, reverting', err);
+          set(before);
+        });
+      }
 
-      swipe: (eventId, action) => {
-        const { savedIds, passedIds, events } = get();
-        if (action === 'save') {
-          if (savedIds.includes(eventId)) return;
+      return {
+        status: 'idle',
+        error: null,
+        ...EMPTY_SERVER_STATE,
+        reportedIds: [],
+        lastSeenUpdateAt: {},
+
+        load: async () => {
+          set({ status: 'loading', error: null });
+          try {
+            const [user, events, responses] = await Promise.all([
+              api.fetchProfile(),
+              api.fetchEvents(),
+              api.fetchMyResponses(),
+            ]);
+            set({
+              status: 'ready',
+              user,
+              events,
+              savedIds: responses.filter((r) => r.status !== 'passed').map((r) => r.eventId),
+              passedIds: responses.filter((r) => r.status === 'passed').map((r) => r.eventId),
+              confirmedIds: responses.filter((r) => r.status === 'going').map((r) => r.eventId),
+            });
+          } catch (err) {
+            console.error('Failed to load data', err);
+            set({ status: 'error', error: err instanceof Error ? err.message : String(err) });
+          }
+        },
+
+        clear: () => set({ status: 'idle', error: null, ...EMPTY_SERVER_STATE }),
+
+        swipe: (eventId, action) => {
+          const { savedIds, passedIds, events } = get();
+          if (action === 'save') {
+            if (savedIds.includes(eventId)) return;
+            optimistic(
+              {
+                savedIds: [...savedIds, eventId],
+                passedIds: passedIds.filter((id) => id !== eventId),
+                events: bumpCount(events, eventId, 1),
+              },
+              () => api.setResponse(eventId, 'interested'),
+            );
+          } else {
+            if (passedIds.includes(eventId) || savedIds.includes(eventId)) return;
+            optimistic({ passedIds: [...passedIds, eventId] }, () => api.setResponse(eventId, 'passed'));
+          }
+        },
+
+        toggleSaved: (eventId) => {
+          const { savedIds, passedIds, confirmedIds, events } = get();
+          if (savedIds.includes(eventId)) {
+            optimistic(
+              {
+                savedIds: savedIds.filter((id) => id !== eventId),
+                confirmedIds: confirmedIds.filter((id) => id !== eventId),
+                events: bumpCount(events, eventId, -1),
+              },
+              () => api.clearResponse(eventId),
+            );
+          } else {
+            optimistic(
+              {
+                savedIds: [...savedIds, eventId],
+                passedIds: passedIds.filter((id) => id !== eventId),
+                events: bumpCount(events, eventId, 1),
+              },
+              () => api.setResponse(eventId, 'interested'),
+            );
+          }
+        },
+
+        confirmAttendance: (eventId) => {
+          const { savedIds, passedIds, confirmedIds, events } = get();
+          if (confirmedIds.includes(eventId)) return;
+          const alreadySaved = savedIds.includes(eventId);
+          optimistic(
+            {
+              savedIds: alreadySaved ? savedIds : [...savedIds, eventId],
+              passedIds: passedIds.filter((id) => id !== eventId),
+              confirmedIds: [...confirmedIds, eventId],
+              events: alreadySaved ? events : bumpCount(events, eventId, 1),
+            },
+            () => api.setResponse(eventId, 'going'),
+          );
+        },
+
+        resetPassed: () => {
+          optimistic({ passedIds: [] }, () => api.clearPassedResponses());
+        },
+
+        markUpdatesSeen: (eventId) => {
+          const event = get().events.find((e) => e.id === eventId);
+          if (!event || event.updates.length === 0) return;
+          const latest = event.updates[event.updates.length - 1];
           set({
-            savedIds: [...savedIds, eventId],
-            events: events.map((e) =>
-              e.id === eventId ? { ...e, interestedCount: e.interestedCount + 1 } : e,
-            ),
+            lastSeenUpdateAt: { ...get().lastSeenUpdateAt, [eventId]: latest.createdAt },
           });
-        } else {
-          if (passedIds.includes(eventId)) return;
-          set({ passedIds: [...passedIds, eventId] });
-        }
-      },
+        },
 
-      toggleSaved: (eventId) => {
-        const { savedIds, confirmedIds, events } = get();
-        const isSaved = savedIds.includes(eventId);
-        set({
-          savedIds: isSaved ? savedIds.filter((id) => id !== eventId) : [...savedIds, eventId],
-          confirmedIds: isSaved ? confirmedIds.filter((id) => id !== eventId) : confirmedIds,
-          events: events.map((e) =>
-            e.id === eventId
-              ? { ...e, interestedCount: e.interestedCount + (isSaved ? -1 : 1) }
-              : e,
-          ),
-        });
-      },
-
-      confirmAttendance: (eventId) => {
-        const { savedIds, confirmedIds, events } = get();
-        const alreadySaved = savedIds.includes(eventId);
-        set({
-          savedIds: alreadySaved ? savedIds : [...savedIds, eventId],
-          confirmedIds: confirmedIds.includes(eventId) ? confirmedIds : [...confirmedIds, eventId],
-          events: alreadySaved
-            ? events
-            : events.map((e) => (e.id === eventId ? { ...e, interestedCount: e.interestedCount + 1 } : e)),
-        });
-      },
-
-      markUpdatesSeen: (eventId) => {
-        const event = get().events.find((e) => e.id === eventId);
-        if (!event || event.updates.length === 0) return;
-        const latest = event.updates[event.updates.length - 1];
-        set({
-          lastSeenUpdateAt: { ...get().lastSeenUpdateAt, [eventId]: latest.createdAt },
-        });
-      },
-
-      createEvent: (input) => {
-        const now = new Date().toISOString();
-        const id = crypto.randomUUID();
-        const user = get().user;
-        const event: CampusEvent = {
-          id,
-          title: input.title,
-          description: input.description,
-          category: input.category,
-          organizerType: input.organizerType,
-          organizerName: input.organizerName,
-          organizerNetId: user?.netId ?? '',
-          start: input.start,
-          end: input.end,
-          locationName: input.locationName,
-          capacity: input.capacity,
-          interestedCount: 0,
-          updates: [],
-          cancelled: false,
-          createdAt: now,
-        };
-        set({ events: [...get().events, event] });
-        return id;
-      },
-
-      resetDemo: () => {
-        set({
-          user: DEFAULT_USER,
-          events: generateSeedEvents(new Date()),
-          savedIds: [],
-          passedIds: [],
-          reportedIds: [],
-          confirmedIds: [],
-          lastSeenUpdateAt: {},
-        });
-      },
-    }),
+        createEvent: async (input) => {
+          const event = await api.createEvent(input);
+          set({ events: [...get().events, event] });
+          return event.id;
+        },
+      };
+    },
     {
-      name: 'swipe-demo-v1',
-      version: 1,
+      name: 'campus-events-local-v2',
+      version: 2,
+      // Everything else comes from the server on each load.
+      partialize: (s) => ({ reportedIds: s.reportedIds, lastSeenUpdateAt: s.lastSeenUpdateAt }),
     },
   ),
 );
