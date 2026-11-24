@@ -56,7 +56,7 @@ export function EventCard({ event, isOutsideInterests, now }: Props) {
           {left != null && (
             <>
               {' · '}
-              <span className="event-card__spots-left">{left} spots left</span>
+              <span className="event-card__spots-left">{left === 0 ? 'Full' : `${left} spots left`}</span>
             </>
           )}
         </div>

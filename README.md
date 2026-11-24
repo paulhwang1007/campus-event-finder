@@ -11,6 +11,7 @@ A swipe-style app for finding casual events around Cornell. Frontend: Vite + Rea
    - In Supabase → Authentication → Providers → Google, enable it and paste the client ID and secret.
    - In Supabase → Authentication → URL Configuration, add `http://localhost:5173` to the redirect URLs (add your deployed URL later).
 3. **Database**: in the Supabase SQL editor, run `supabase/schema.sql`, then `supabase/seed.sql`.
+   - Already set up with an older `schema.sql`? Run each file in `supabase/migrations/` you haven't run yet, in order, instead of re-running `schema.sql`.
 4. **Cornell-only signups**: Authentication → Hooks → add a "Before User Created" hook → Postgres function `public.hook_before_user_created`.
 5. **Env vars**: copy `.env.example` to `.env.local` and fill in the project URL and anon key (Project Settings → API).
 
@@ -20,9 +21,10 @@ Demo event times are relative to when `seed.sql` was run; re-run it to refresh t
 
 ## How data is stored
 
-- `profiles`: one row per signed-in user, created automatically on first sign-in.
+- `profiles`: one row per signed-in user, created automatically on first sign-in. `onboarded_at` is set once they finish profile setup.
 - `events`: all events. Seeded events have no `organizer_id`.
 - `event_responses`: one row per (user, event) with status `interested`, `passed`, or `going`.
-- `events_with_counts`: view the app reads from; adds `interested_count`.
+- `events_with_counts`: view the app reads from; adds `interested_count` (interested + going) and `going_count`.
+- A trigger on `event_responses` refuses "going" when the event is full or cancelled, so capacity holds even if two people join at once.
 
 Access rules (row level security) only let @cornell.edu users read data, and only let each user change their own responses and events.

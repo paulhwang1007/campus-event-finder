@@ -43,13 +43,25 @@ export function Feed() {
         <EmptyState
           filtered={category !== 'all'}
           onReset={passedIds.length > 0 ? resetPassed : undefined}
+          onSeeInterested={() => navigate('/interested')}
+          onHost={() => navigate('/create')}
         />
       )}
     </div>
   );
 }
 
-function EmptyState({ filtered, onReset }: { filtered: boolean; onReset?: () => void }) {
+function EmptyState({
+  filtered,
+  onReset,
+  onSeeInterested,
+  onHost,
+}: {
+  filtered: boolean;
+  onReset?: () => void;
+  onSeeInterested: () => void;
+  onHost: () => void;
+}) {
   return (
     <div className="feed__empty">
       <span className="feed__empty-icon">
@@ -57,11 +69,19 @@ function EmptyState({ filtered, onReset }: { filtered: boolean; onReset?: () => 
       </span>
       <p>You're all caught up</p>
       {filtered && <p>Try "All" categories.</p>}
-      {onReset && (
-        <button type="button" className="feed__reset" onClick={onReset}>
-          Show passed events again
+      <div className="feed__empty-actions">
+        <button type="button" className="feed__empty-btn feed__empty-btn--primary" onClick={onSeeInterested}>
+          See Interested
         </button>
-      )}
+        <button type="button" className="feed__empty-btn" onClick={onHost}>
+          Host something
+        </button>
+        {onReset && (
+          <button type="button" className="feed__reset" onClick={onReset}>
+            Show passed events again
+          </button>
+        )}
+      </div>
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { format } from 'date-fns';
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { IconChevronRight, IconPencil, IconUser } from '../components/Icon';
+import { getCategory } from '../data/categories';
 import { signOut } from '../lib/supabase';
 import { formatDayHeading } from '../lib/time';
 import { getProfileEvents } from '../store/selectors';
@@ -43,8 +44,17 @@ export function Profile() {
             {user?.major && ` · ${user.major}`}
           </span>
           {user?.bio && <span className="profile__bio">{user.bio}</span>}
+          {user && user.interests.length > 0 && (
+            <span className="profile__interests">
+              {user.interests.map((id) => (
+                <span key={id} className="pill">
+                  {getCategory(id).label}
+                </span>
+              ))}
+            </span>
+          )}
         </div>
-        <button type="button" className="profile__edit" aria-label="Edit profile" disabled>
+        <button type="button" className="profile__edit" aria-label="Edit profile" onClick={() => navigate('/profile/edit')}>
           <IconPencil size={16} />
         </button>
       </div>

@@ -1,39 +1,79 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import * as api from '../lib/api';
-import type { CampusEvent, NewEventInput, User } from '../types';
+import type { CampusEvent, NewEventInput, ProfileInput, User } from '../types';
 
 type LoadStatus = 'idle' | 'loading' | 'ready' | 'error';
 
 /** Server-backed fields that an optimistic update may need to roll back. */
 type Snapshot = Pick<AppState, 'events' | 'savedIds' | 'passedIds' | 'confirmedIds'>;
 
+export interface Toast {
+  id: number;
+  message: string;
+  tone: 'info' | 'error';
+  action?: { label: string; onClick: () => void };
+}
+
 interface AppState {
   status: LoadStatus;
   error: string | null;
+  lastLoadedAt: number | null;
   user: User | null;
   events: CampusEvent[];
   savedIds: string[]; // 'interested' or 'going'
   passedIds: string[];
   confirmedIds: string[]; // 'going'
+  toast: Toast | null;
   // Local-only (not stored on the server yet):
   reportedIds: string[];
   lastSeenUpdateAt: Record<string, string>;
 
   load: () => Promise<void>;
+  refresh: () => Promise<void>;
   clear: () => void;
+
   swipe: (eventId: string, action: 'save' | 'pass') => void;
-  toggleSaved: (eventId: string) => void;
-  confirmAttendance: (eventId: string) => void;
+  undoSwipe: (eventId: string) => void;
+  toggleSaved: (eventId: string) => Promise<boolean>;
+  confirmAttendance: (eventId: string) => Promise<boolean>;
+  leaveEvent: (eventId: string) => Promise<boolean>;
   resetPassed: () => void;
   markUpdatesSeen: (eventId: string) => void;
+
   createEvent: (input: NewEventInput) => Promise<string>;
+  cancelEvent: (eventId: string) => Promise<boolean>;
+  updateProfile: (input: ProfileInput) => Promise<void>;
+
+  showToast: (message: string, options?: { tone?: Toast['tone']; action?: Toast['action'] }) => void;
+  hideToast: () => void;
 }
 
-function bumpCount(events: CampusEvent[], eventId: string, delta: number): CampusEvent[] {
+function bumpCounts(
+  events: CampusEvent[],
+  eventId: string,
+  delta: { interested?: number; going?: number },
+): CampusEvent[] {
   return events.map((e) =>
-    e.id === eventId ? { ...e, interestedCount: Math.max(0, e.interestedCount + delta) } : e,
+    e.id === eventId
+      ? {
+          ...e,
+          interestedCount: Math.max(0, e.interestedCount + (delta.interested ?? 0)),
+          goingCount: Math.max(0, e.goingCount + (delta.going ?? 0)),
+        }
+      : e,
   );
+}
+
+function without(ids: string[], id: string): string[] {
+  return ids.filter((x) => x !== id);
+}
+
+/** Errors raised on purpose by the database (e.g. "This event is full.") are safe to show as-is. */
+function friendlyError(err: unknown): string {
+  const e = err as { code?: string; message?: string };
+  if (e?.code === 'P0001' && e.message) return e.message;
+  return "Couldn't save that. Check your connection and try again.";
 }
 
 const EMPTY_SERVER_STATE = {
@@ -42,111 +82,171 @@ const EMPTY_SERVER_STATE = {
   savedIds: [],
   passedIds: [],
   confirmedIds: [],
+  lastLoadedAt: null,
 };
+
+let toastId = 0;
 
 export const useAppStore = create<AppState>()(
   persist(
     (set, get) => {
-      /** Apply a local change right away, then sync it; undo the change if the request fails. */
-      function optimistic(patch: Partial<Snapshot>, request: () => Promise<void>) {
+      /**
+       * Apply a local change right away, then sync it. If the request fails, undo the
+       * change and show an error toast. Resolves to whether the save succeeded.
+       */
+      async function optimistic(patch: Partial<Snapshot>, request: () => Promise<void>): Promise<boolean> {
         const { events, savedIds, passedIds, confirmedIds } = get();
         const before: Snapshot = { events, savedIds, passedIds, confirmedIds };
         set(patch);
-        request().catch((err: unknown) => {
+        try {
+          await request();
+          return true;
+        } catch (err) {
           console.error('Failed to save change, reverting', err);
           set(before);
-        });
+          get().showToast(friendlyError(err), { tone: 'error' });
+          return false;
+        }
+      }
+
+      async function fetchAll() {
+        const [user, events, responses] = await Promise.all([
+          api.fetchProfile(),
+          api.fetchEvents(),
+          api.fetchMyResponses(),
+        ]);
+        return {
+          user,
+          events,
+          savedIds: responses.filter((r) => r.status !== 'passed').map((r) => r.eventId),
+          passedIds: responses.filter((r) => r.status === 'passed').map((r) => r.eventId),
+          confirmedIds: responses.filter((r) => r.status === 'going').map((r) => r.eventId),
+          lastLoadedAt: Date.now(),
+        };
       }
 
       return {
         status: 'idle',
         error: null,
         ...EMPTY_SERVER_STATE,
+        toast: null,
         reportedIds: [],
         lastSeenUpdateAt: {},
 
         load: async () => {
           set({ status: 'loading', error: null });
           try {
-            const [user, events, responses] = await Promise.all([
-              api.fetchProfile(),
-              api.fetchEvents(),
-              api.fetchMyResponses(),
-            ]);
-            set({
-              status: 'ready',
-              user,
-              events,
-              savedIds: responses.filter((r) => r.status !== 'passed').map((r) => r.eventId),
-              passedIds: responses.filter((r) => r.status === 'passed').map((r) => r.eventId),
-              confirmedIds: responses.filter((r) => r.status === 'going').map((r) => r.eventId),
-            });
+            set({ status: 'ready', ...(await fetchAll()) });
           } catch (err) {
             console.error('Failed to load data', err);
-            set({ status: 'error', error: err instanceof Error ? err.message : String(err) });
+            // Supabase errors are plain objects with a message, not Error instances.
+            const message = (err as { message?: string })?.message ?? String(err);
+            set({ status: 'error', error: message });
           }
         },
 
-        clear: () => set({ status: 'idle', error: null, ...EMPTY_SERVER_STATE }),
+        /** Re-fetch in the background without showing the loading screen. */
+        refresh: async () => {
+          if (get().status !== 'ready') return;
+          try {
+            set(await fetchAll());
+          } catch (err) {
+            console.error('Background refresh failed', err);
+          }
+        },
+
+        clear: () => set({ status: 'idle', error: null, toast: null, ...EMPTY_SERVER_STATE }),
 
         swipe: (eventId, action) => {
-          const { savedIds, passedIds, events } = get();
+          const { savedIds, passedIds, events, showToast, undoSwipe } = get();
+          const undo = { label: 'Undo', onClick: () => undoSwipe(eventId) };
           if (action === 'save') {
             if (savedIds.includes(eventId)) return;
-            optimistic(
+            showToast('Saved to Interested', { action: undo });
+            void optimistic(
               {
                 savedIds: [...savedIds, eventId],
-                passedIds: passedIds.filter((id) => id !== eventId),
-                events: bumpCount(events, eventId, 1),
+                passedIds: without(passedIds, eventId),
+                events: bumpCounts(events, eventId, { interested: 1 }),
               },
               () => api.setResponse(eventId, 'interested'),
             );
           } else {
             if (passedIds.includes(eventId) || savedIds.includes(eventId)) return;
-            optimistic({ passedIds: [...passedIds, eventId] }, () => api.setResponse(eventId, 'passed'));
+            showToast('Passed', { action: undo });
+            void optimistic({ passedIds: [...passedIds, eventId] }, () => api.setResponse(eventId, 'passed'));
           }
+        },
+
+        undoSwipe: (eventId) => {
+          const { savedIds, passedIds, confirmedIds, events, hideToast } = get();
+          hideToast();
+          if (confirmedIds.includes(eventId)) return; // joined since swiping; leave that alone
+          const wasSaved = savedIds.includes(eventId);
+          if (!wasSaved && !passedIds.includes(eventId)) return;
+          void optimistic(
+            {
+              savedIds: without(savedIds, eventId),
+              passedIds: without(passedIds, eventId),
+              events: wasSaved ? bumpCounts(events, eventId, { interested: -1 }) : events,
+            },
+            () => api.clearResponse(eventId),
+          );
         },
 
         toggleSaved: (eventId) => {
           const { savedIds, passedIds, confirmedIds, events } = get();
           if (savedIds.includes(eventId)) {
-            optimistic(
+            const wasGoing = confirmedIds.includes(eventId);
+            return optimistic(
               {
-                savedIds: savedIds.filter((id) => id !== eventId),
-                confirmedIds: confirmedIds.filter((id) => id !== eventId),
-                events: bumpCount(events, eventId, -1),
+                savedIds: without(savedIds, eventId),
+                confirmedIds: without(confirmedIds, eventId),
+                events: bumpCounts(events, eventId, { interested: -1, going: wasGoing ? -1 : 0 }),
               },
               () => api.clearResponse(eventId),
             );
-          } else {
-            optimistic(
-              {
-                savedIds: [...savedIds, eventId],
-                passedIds: passedIds.filter((id) => id !== eventId),
-                events: bumpCount(events, eventId, 1),
-              },
-              () => api.setResponse(eventId, 'interested'),
-            );
           }
+          return optimistic(
+            {
+              savedIds: [...savedIds, eventId],
+              passedIds: without(passedIds, eventId),
+              events: bumpCounts(events, eventId, { interested: 1 }),
+            },
+            () => api.setResponse(eventId, 'interested'),
+          );
         },
 
-        confirmAttendance: (eventId) => {
+        confirmAttendance: async (eventId) => {
           const { savedIds, passedIds, confirmedIds, events } = get();
-          if (confirmedIds.includes(eventId)) return;
+          if (confirmedIds.includes(eventId)) return true;
           const alreadySaved = savedIds.includes(eventId);
-          optimistic(
+          return optimistic(
             {
               savedIds: alreadySaved ? savedIds : [...savedIds, eventId],
-              passedIds: passedIds.filter((id) => id !== eventId),
+              passedIds: without(passedIds, eventId),
               confirmedIds: [...confirmedIds, eventId],
-              events: alreadySaved ? events : bumpCount(events, eventId, 1),
+              events: bumpCounts(events, eventId, { interested: alreadySaved ? 0 : 1, going: 1 }),
             },
             () => api.setResponse(eventId, 'going'),
           );
         },
 
+        /** Going → back to just Interested. */
+        leaveEvent: async (eventId) => {
+          const { confirmedIds, events } = get();
+          if (!confirmedIds.includes(eventId)) return true;
+          return optimistic(
+            {
+              confirmedIds: without(confirmedIds, eventId),
+              events: bumpCounts(events, eventId, { going: -1 }),
+            },
+            () => api.setResponse(eventId, 'interested'),
+          );
+        },
+
         resetPassed: () => {
-          optimistic({ passedIds: [] }, () => api.clearPassedResponses());
+          void optimistic({ passedIds: [] }, () => api.clearPassedResponses());
         },
 
         markUpdatesSeen: (eventId) => {
@@ -163,6 +263,25 @@ export const useAppStore = create<AppState>()(
           set({ events: [...get().events, event] });
           return event.id;
         },
+
+        cancelEvent: async (eventId) => {
+          const { events } = get();
+          return optimistic(
+            { events: events.map((e) => (e.id === eventId ? { ...e, cancelled: true } : e)) },
+            () => api.cancelEvent(eventId),
+          );
+        },
+
+        updateProfile: async (input) => {
+          const user = await api.updateProfile(input);
+          set({ user });
+        },
+
+        showToast: (message, options) => {
+          set({ toast: { id: ++toastId, message, tone: options?.tone ?? 'info', action: options?.action } });
+        },
+
+        hideToast: () => set({ toast: null }),
       };
     },
     {

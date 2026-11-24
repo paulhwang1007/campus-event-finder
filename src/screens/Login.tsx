@@ -45,16 +45,20 @@ export function Login() {
 export function StatusScreen({
   title,
   message,
+  detail,
   action,
 }: {
   title: string;
   message?: string;
+  /** Technical detail (e.g. an error message), shown small for troubleshooting. */
+  detail?: string;
   action?: { label: string; onClick: () => void };
 }) {
   return (
     <div className="login">
       <h1 className="login__title">{title}</h1>
       {message && <p className="login__subtitle">{message}</p>}
+      {detail && <p className="login__error">{detail}</p>}
       {action && (
         <button type="button" className="login__button" onClick={action.onClick}>
           {action.label}

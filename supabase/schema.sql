@@ -23,6 +23,7 @@ create table if not exists public.profiles (
   major       text,
   bio         text,
   interests   text[] not null default '{}',
+  onboarded_at timestamptz, -- null until the user finishes profile setup
   created_at  timestamptz not null default now()
 );
 
@@ -175,7 +176,7 @@ create policy "Users can remove their own responses"
   on public.event_responses for delete to authenticated
   using (user_id = auth.uid() and public.is_cornell());
 
--- ───────────────────────── Events + interested count ─────────────────────────
+-- ───────────────────────── Events + counts ─────────────────────────
 
 -- Runs with the view owner's rights so it can count everyone's responses
 -- (each user can only see their own rows directly). The is_cornell() filter
@@ -187,9 +188,60 @@ create or replace view public.events_with_counts as
       select count(*)::int
       from public.event_responses r
       where r.event_id = e.id and r.status in ('interested', 'going')
-    ) as interested_count
+    ) as interested_count,
+    (
+      select count(*)::int
+      from public.event_responses r
+      where r.event_id = e.id and r.status = 'going'
+    ) as going_count
   from public.events e
   where public.is_cornell();
 
 revoke all on public.events_with_counts from anon, public;
 grant select on public.events_with_counts to authenticated;
+
+-- ───────────────────────── Capacity limit ─────────────────────────
+
+-- Refuse to mark someone as going when the event is full or cancelled.
+create or replace function public.enforce_event_capacity()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  event_capacity int;
+  event_cancelled boolean;
+  current_going int;
+begin
+  if new.status <> 'going' or (tg_op = 'UPDATE' and old.status = 'going') then
+    return new;
+  end if;
+
+  -- Lock the event row so two people can't take the last spot at the same time.
+  select capacity, cancelled into event_capacity, event_cancelled
+  from public.events where id = new.event_id
+  for update;
+
+  if event_cancelled then
+    raise exception 'This event was cancelled.' using errcode = 'P0001';
+  end if;
+
+  if event_capacity is not null then
+    select count(*) into current_going
+    from public.event_responses
+    where event_id = new.event_id and status = 'going' and user_id <> new.user_id;
+
+    if current_going >= event_capacity then
+      raise exception 'This event is full.' using errcode = 'P0001';
+    end if;
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists enforce_event_capacity on public.event_responses;
+create trigger enforce_event_capacity
+  before insert or update of status on public.event_responses
+  for each row execute function public.enforce_event_capacity();

@@ -17,6 +17,7 @@ function makeEvent(overrides: Partial<CampusEvent>): CampusEvent {
     end: now.toISOString(),
     locationName: 'Somewhere',
     interestedCount: 0,
+    goingCount: 0,
     updates: [],
     cancelled: false,
     createdAt: now.toISOString(),

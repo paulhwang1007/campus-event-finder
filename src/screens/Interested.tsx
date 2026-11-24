@@ -15,6 +15,8 @@ export function Interested() {
   const confirmedIds = useAppStore((s) => s.confirmedIds);
   const reportedIds = useAppStore((s) => s.reportedIds);
   const toggleSaved = useAppStore((s) => s.toggleSaved);
+  const leaveEvent = useAppStore((s) => s.leaveEvent);
+  const showToast = useAppStore((s) => s.showToast);
   const [category, setCategory] = useState<CategoryId | 'all'>('all');
 
   const now = useMemo(() => new Date(), [events, savedIds, confirmedIds, reportedIds]);
@@ -65,8 +67,16 @@ export function Interested() {
                 isGoing={confirmedSet.has(event.id)}
                 onOpen={() => navigate(`/events/${event.id}`)}
                 onJoin={() => navigate(`/events/${event.id}/confirm`)}
-                onLeave={() => toggleSaved(event.id)}
-                onRemove={() => toggleSaved(event.id)}
+                onLeave={async () => {
+                  if (await leaveEvent(event.id)) showToast("You're no longer going. It's still saved here.");
+                }}
+                onRemove={async () => {
+                  if (await toggleSaved(event.id)) {
+                    showToast('Removed from Interested', {
+                      action: { label: 'Undo', onClick: () => void toggleSaved(event.id) },
+                    });
+                  }
+                }}
               />
             ))}
           </div>

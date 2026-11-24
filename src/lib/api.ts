@@ -1,4 +1,4 @@
-import type { CampusEvent, CategoryId, ClassYear, NewEventInput, OrganizerType, User } from '../types';
+import type { CampusEvent, CategoryId, ClassYear, NewEventInput, OrganizerType, ProfileInput, User } from '../types';
 import { supabase } from './supabase';
 
 export type ResponseStatus = 'interested' | 'passed' | 'going';
@@ -21,6 +21,7 @@ interface EventRow {
   cancelled: boolean;
   created_at: string;
   interested_count?: number;
+  going_count?: number;
 }
 
 interface ProfileRow {
@@ -31,6 +32,7 @@ interface ProfileRow {
   major: string | null;
   bio: string | null;
   interests: CategoryId[];
+  onboarded_at: string | null;
 }
 
 function toEvent(row: EventRow): CampusEvent {
@@ -48,6 +50,7 @@ function toEvent(row: EventRow): CampusEvent {
     locationNote: row.location_note ?? undefined,
     capacity: row.capacity ?? undefined,
     interestedCount: row.interested_count ?? 0,
+    goingCount: row.going_count ?? 0,
     accessibility: row.accessibility ?? undefined,
     participation: row.participation ?? undefined,
     updates: [],
@@ -65,6 +68,7 @@ function toUser(row: ProfileRow): User {
     bio: row.bio ?? undefined,
     interests: row.interests,
     verified: true, // only @cornell.edu accounts can sign up
+    onboarded: row.onboarded_at != null,
   };
 }
 
@@ -150,4 +154,27 @@ export async function createEvent(input: NewEventInput): Promise<CampusEvent> {
     .single();
   if (error) throw error;
   return toEvent(data as EventRow);
+}
+
+export async function updateProfile(input: ProfileInput): Promise<User> {
+  const userId = await currentUserId();
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({
+      name: input.name,
+      class_year: input.classYear,
+      major: input.major ?? null,
+      interests: input.interests,
+      onboarded_at: new Date().toISOString(),
+    })
+    .eq('id', userId)
+    .select('*')
+    .single();
+  if (error) throw error;
+  return toUser(data as ProfileRow);
+}
+
+export async function cancelEvent(eventId: string): Promise<void> {
+  const { error } = await supabase.from('events').update({ cancelled: true }).eq('id', eventId);
+  if (error) throw error;
 }

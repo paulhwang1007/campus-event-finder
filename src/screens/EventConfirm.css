@@ -135,3 +135,24 @@
   font-size: var(--text-body-size);
   line-height: var(--text-body-lh);
 }
+
+.event-confirm__cta:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.event-confirm__cta--inline {
+  margin-top: var(--space-4);
+  width: auto;
+  padding: var(--space-3) var(--space-5);
+}
+
+.event-confirm__blocker {
+  margin: auto 0 0;
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-disabled);
+  color: var(--color-text-muted);
+  text-align: center;
+  font-weight: var(--text-bodystrong-weight);
+}

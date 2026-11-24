@@ -2,7 +2,7 @@ import { animate, motion, useMotionValue, useTransform } from 'framer-motion';
 import { useEffect, useRef } from 'react';
 import { EventCard } from './EventCard';
 import { IconChevronLeft, IconChevronRight } from './Icon';
-import type { FeedCard } from '../store/selectors';
+import { isFull, type FeedCard } from '../store/selectors';
 import type { CampusEvent } from '../types';
 import './SwipeDeck.css';
 
@@ -78,8 +78,13 @@ export function SwipeDeck({ cards, now, onSwipe, onOpen, onJoinEvent }: Props) {
 
       <div className="swipe-deck__actions">
         <p className="swipe-deck__hint">Swipe left to skip or right to save</p>
-        <button type="button" className="swipe-deck__join" onClick={() => onJoinEvent(top.event)}>
-          Join event
+        <button
+          type="button"
+          className="swipe-deck__join"
+          onClick={() => onJoinEvent(top.event)}
+          disabled={isFull(top.event)}
+        >
+          {isFull(top.event) ? 'Event full' : 'Join event'}
         </button>
       </div>
     </div>

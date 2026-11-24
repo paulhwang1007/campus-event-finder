@@ -434,6 +434,7 @@ export function generateSeedEvents(now: Date): CampusEvent[] {
     locationNote: t.locationNote,
     capacity: t.capacity,
     interestedCount: t.interestedCount,
+    goingCount: 0,
     accessibility: t.accessibility,
     participation: t.participation,
     cancelled: false,

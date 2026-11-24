@@ -44,7 +44,6 @@
   font-size: var(--text-caption-size);
   line-height: var(--text-caption-lh);
   color: var(--color-text-muted);
-  padding-right: var(--space-5);
 }
 
 .interested-card__title {
@@ -137,4 +136,32 @@
 .interested-card__cta--going {
   background: var(--color-surface);
   color: var(--color-primary);
+}
+
+.interested-card__pills {
+  align-self: flex-start;
+  padding-right: var(--space-5); /* room for the remove button */
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.interested-card__cancelled-pill {
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+  background: var(--color-primary-soft);
+}
+
+.interested-card__cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+}
+
+.interested-card__cta:disabled {
+  background: var(--color-disabled);
+  border-color: var(--color-disabled);
+  color: var(--color-text-muted);
+  cursor: not-allowed;
 }

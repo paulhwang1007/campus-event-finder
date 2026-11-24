@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getFeed, getInterested, getProfileEvents, hasUnreadUpdate, spotsLeft } from './selectors';
+import { getFeed, getInterested, getProfileEvents, hasUnreadUpdate, isFull, spotsLeft } from './selectors';
 import type { CampusEvent, User } from '../types';
 
 const now = new Date('2026-10-23T12:00:00.000Z');
@@ -18,6 +18,7 @@ function makeEvent(id: string, overrides: Partial<CampusEvent>): CampusEvent {
     end: hours(2),
     locationName: 'Somewhere',
     interestedCount: 0,
+    goingCount: 0,
     updates: [],
     cancelled: false,
     createdAt: hours(-24),
@@ -31,6 +32,7 @@ const user: User = {
   classYear: 'Sophomore',
   interests: ['food'],
   verified: true,
+  onboarded: true,
 };
 
 describe('getFeed', () => {
@@ -194,14 +196,29 @@ describe('hasUnreadUpdate', () => {
 
 describe('spotsLeft', () => {
   it('returns null when there is no capacity', () => {
-    expect(spotsLeft(makeEvent('e', { capacity: undefined, interestedCount: 5 }))).toBeNull();
+    expect(spotsLeft(makeEvent('e', { capacity: undefined, goingCount: 5 }))).toBeNull();
   });
 
-  it('returns the remaining spots', () => {
-    expect(spotsLeft(makeEvent('e', { capacity: 10, interestedCount: 4 }))).toBe(6);
+  it('counts people going, not people interested', () => {
+    expect(spotsLeft(makeEvent('e', { capacity: 10, goingCount: 4, interestedCount: 9 }))).toBe(6);
   });
 
   it('never returns a negative number', () => {
-    expect(spotsLeft(makeEvent('e', { capacity: 5, interestedCount: 9 }))).toBe(0);
+    expect(spotsLeft(makeEvent('e', { capacity: 5, goingCount: 9 }))).toBe(0);
+  });
+});
+
+describe('isFull', () => {
+  it('is true only when a capacity is set and reached', () => {
+    expect(isFull(makeEvent('e', { capacity: 3, goingCount: 3 }))).toBe(true);
+    expect(isFull(makeEvent('e', { capacity: 3, goingCount: 2, interestedCount: 10 }))).toBe(false);
+    expect(isFull(makeEvent('e', { capacity: undefined, goingCount: 50 }))).toBe(false);
+  });
+});
+
+describe('getFeed cancelled events', () => {
+  it('leaves cancelled events out of the feed', () => {
+    const state = { user, events: [makeEvent('live', {}), makeEvent('off', { cancelled: true })], savedIds: [], passedIds: [], reportedIds: [] };
+    expect(getFeed(state, now).map((c) => c.event.id)).toEqual(['live']);
   });
 });

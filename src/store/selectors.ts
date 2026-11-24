@@ -31,6 +31,7 @@ export function getFeed(state: FeedState, now: Date, categoryFilter?: CategoryId
 
   const visible = events.filter((e) => {
     if (isPast(e, now)) return false;
+    if (e.cancelled) return false;
     if (excluded.has(e.id)) return false;
     if (user && e.organizerNetId === user.netId) return false;
     if (categoryFilter && categoryFilter !== 'all' && e.category !== categoryFilter) return false;
@@ -123,6 +124,7 @@ export function searchEvents(
   const q = query.trim().toLowerCase();
   return state.events.filter((e) => {
     if (isPast(e, now)) return false;
+    if (e.cancelled) return false;
     if (state.reportedIds.includes(e.id)) return false;
     if (category && category !== 'all' && e.category !== category) return false;
     if (!q) return true;
@@ -130,7 +132,12 @@ export function searchEvents(
   });
 }
 
+/** Spots left for people marked as going; null when the event has no capacity limit. */
 export function spotsLeft(event: CampusEvent): number | null {
   if (event.capacity == null) return null;
-  return Math.max(0, event.capacity - event.interestedCount);
+  return Math.max(0, event.capacity - event.goingCount);
+}
+
+export function isFull(event: CampusEvent): boolean {
+  return spotsLeft(event) === 0;
 }

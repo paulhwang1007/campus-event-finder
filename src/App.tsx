@@ -2,6 +2,7 @@ import type { Session } from '@supabase/supabase-js';
 import { useEffect, useState } from 'react';
 import { Navigate, Outlet, Route, Routes } from 'react-router-dom';
 import { BottomNav } from './components/BottomNav';
+import { Toast } from './components/Toast';
 import { supabase, supabaseConfigured } from './lib/supabase';
 import { CreateEvent } from './screens/CreateEvent';
 import { EventConfirm } from './screens/EventConfirm';
@@ -10,12 +11,14 @@ import { Feed } from './screens/Feed';
 import { Interested } from './screens/Interested';
 import { Login, StatusScreen } from './screens/Login';
 import { Profile } from './screens/Profile';
+import { ProfileSetup } from './screens/ProfileSetup';
 import { useAppStore } from './store/useAppStore';
 
 function Layout() {
   return (
     <>
       <Outlet />
+      <Toast />
       <BottomNav />
     </>
   );
@@ -31,12 +34,31 @@ function useSession(): Session | null | undefined {
   return session;
 }
 
+const REFRESH_AFTER_MS = 60_000;
+
+/** Re-fetch events when the user comes back to the tab, so counts and new events stay current. */
+function useRefreshOnReturn() {
+  const refresh = useAppStore((s) => s.refresh);
+  useEffect(() => {
+    function handleVisibility() {
+      if (document.visibilityState !== 'visible') return;
+      const { lastLoadedAt } = useAppStore.getState();
+      if (lastLoadedAt != null && Date.now() - lastLoadedAt > REFRESH_AFTER_MS) void refresh();
+    }
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, [refresh]);
+}
+
 function App() {
   const session = useSession();
   const userId = session?.user.id;
   const status = useAppStore((s) => s.status);
+  const loadError = useAppStore((s) => s.error);
+  const onboarded = useAppStore((s) => s.user?.onboarded ?? false);
   const load = useAppStore((s) => s.load);
   const clear = useAppStore((s) => s.clear);
+  useRefreshOnReturn();
 
   useEffect(() => {
     if (userId) void load();
@@ -58,11 +80,13 @@ function App() {
       <StatusScreen
         title="Something went wrong"
         message="We couldn't load events."
+        detail={loadError ?? undefined}
         action={{ label: 'Try again', onClick: () => void load() }}
       />
     );
   }
   if (status !== 'ready') return <StatusScreen title="Campus Events" message="Loading events…" />;
+  if (!onboarded) return <ProfileSetup mode="onboarding" />;
 
   return (
     <Routes>
@@ -71,6 +95,7 @@ function App() {
         <Route path="/create" element={<CreateEvent />} />
         <Route path="/interested" element={<Interested />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/profile/edit" element={<ProfileSetup mode="edit" />} />
         <Route path="/events/:id" element={<EventDetails />} />
         <Route path="/events/:id/confirm" element={<EventConfirm />} />
         <Route path="*" element={<Navigate to="/feed" replace />} />

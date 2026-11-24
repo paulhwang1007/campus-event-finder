@@ -1,7 +1,7 @@
 import { getCategory } from '../data/categories';
-import { IconCalendar, IconMapPin, IconX } from './Icon';
+import { IconCalendar, IconCheck, IconMapPin, IconX } from './Icon';
 import { formatEventTimeParts } from '../lib/time';
-import { spotsLeft } from '../store/selectors';
+import { isFull, spotsLeft } from '../store/selectors';
 import type { CampusEvent } from '../types';
 import './InterestedCard.css';
 
@@ -41,7 +41,10 @@ export function InterestedCard({ event, now, isGoing, onOpen, onJoin, onLeave, o
           if (e.key === 'Enter') onOpen();
         }}
       >
-        <span className="pill interested-card__category-pill">{category.label}</span>
+        <span className="interested-card__pills">
+          <span className="pill interested-card__category-pill">{category.label}</span>
+          {event.cancelled && <span className="pill interested-card__cancelled-pill">Cancelled</span>}
+        </span>
 
         <h3 className="interested-card__title">{event.title}</h3>
 
@@ -70,7 +73,7 @@ export function InterestedCard({ event, now, isGoing, onOpen, onJoin, onLeave, o
           {left != null && (
             <>
               {' · '}
-              <span className="interested-card__spots-left">{left} spots left</span>
+              <span className="interested-card__spots-left">{left === 0 ? 'Full' : `${left} spots left`}</span>
             </>
           )}
         </div>
@@ -79,12 +82,23 @@ export function InterestedCard({ event, now, isGoing, onOpen, onJoin, onLeave, o
       </div>
 
       {isGoing ? (
-        <button type="button" className="interested-card__cta interested-card__cta--going" onClick={onLeave}>
-          Going
+        <button
+          type="button"
+          className="interested-card__cta interested-card__cta--going"
+          onClick={onLeave}
+          disabled={event.cancelled}
+          aria-label={`You're going to ${event.title}. Tap if you can't make it.`}
+        >
+          <IconCheck size={16} /> Going · Can't make it?
         </button>
       ) : (
-        <button type="button" className="interested-card__cta" onClick={onJoin}>
-          Join event
+        <button
+          type="button"
+          className="interested-card__cta"
+          onClick={onJoin}
+          disabled={event.cancelled || isFull(event)}
+        >
+          {event.cancelled ? 'Cancelled' : isFull(event) ? 'Event full' : 'Join event'}
         </button>
       )}
     </div>

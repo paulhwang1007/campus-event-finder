@@ -108,3 +108,10 @@
   font-size: var(--text-bodystrong-size);
   font-weight: var(--text-bodystrong-weight);
 }
+
+.swipe-deck__join:disabled {
+  background: var(--color-disabled);
+  border-color: var(--color-disabled);
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+}

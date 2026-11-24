@@ -27,6 +27,8 @@ export interface User {
   bio?: string;
   interests: CategoryId[];
   verified: boolean;
+  /** False until the user finishes first-time profile setup. */
+  onboarded: boolean;
 }
 
 export type OrganizerType = 'student' | 'club';
@@ -52,6 +54,7 @@ export interface CampusEvent {
   locationNote?: string;
   capacity?: number;
   interestedCount: number;
+  goingCount: number;
   accessibility?: string;
   participation?: string;
   updates: EventUpdate[];
@@ -69,6 +72,13 @@ export interface NewEventInput {
   end: string;
   locationName: string;
   capacity?: number;
+}
+
+export interface ProfileInput {
+  name: string;
+  classYear: ClassYear;
+  major?: string;
+  interests: CategoryId[];
 }
 
 export type ReportReason = 'inappropriate' | 'misleading' | 'unsafe' | 'not_cornell' | 'other';

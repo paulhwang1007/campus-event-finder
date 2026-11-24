@@ -223,3 +223,10 @@
   font-size: var(--text-bodysm-size);
   font-weight: var(--text-bodystrong-weight);
 }
+
+.profile__interests {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+}
