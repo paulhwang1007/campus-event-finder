@@ -6,8 +6,14 @@ import { isFull, type FeedCard } from '../store/selectors';
 import type { CampusEvent } from '../types';
 import './SwipeDeck.css';
 
-const SWIPE_OFFSET_THRESHOLD = 120;
-const SWIPE_VELOCITY_THRESHOLD = 500;
+/** Drag this far (about a third of the card) to commit a swipe… */
+const SWIPE_OFFSET_THRESHOLD = 100;
+/** …or flick at least this fast (px/s), as long as the card moved a little in that direction. */
+const SWIPE_VELOCITY_THRESHOLD = 400;
+const FLICK_MIN_OFFSET = 30;
+/** A touch only counts as a tap (open details) if the finger stayed this still and lifted this fast. */
+const TAP_MAX_MOVEMENT = 8;
+const TAP_MAX_MS = 500;
 const FLY_OUT_DISTANCE = 1000;
 
 function prefersReducedMotion(): boolean {
@@ -122,6 +128,8 @@ function TopCard({ card, now, onCommit, onOpen, commitRef, x }: TopCardProps) {
   const saveScale = useTransform(x, [20, 120], [0.6, 1]);
   const passScale = useTransform(x, [-120, -20], [1, 0.6]);
   const committed = useRef(false);
+  const pointerStart = useRef<{ x: number; y: number; time: number } | null>(null);
+  const dragged = useRef(false);
 
   function commit(action: 'save' | 'pass') {
     if (committed.current) return;
@@ -134,9 +142,11 @@ function TopCard({ card, now, onCommit, onOpen, commitRef, x }: TopCardProps) {
   commitRef.current = commit;
 
   function handleDragEnd(_e: unknown, info: { offset: { x: number }; velocity: { x: number } }) {
-    if (info.offset.x > SWIPE_OFFSET_THRESHOLD || info.velocity.x > SWIPE_VELOCITY_THRESHOLD) {
+    const { x: offset } = info.offset;
+    const { x: velocity } = info.velocity;
+    if (offset > SWIPE_OFFSET_THRESHOLD || (velocity > SWIPE_VELOCITY_THRESHOLD && offset > FLICK_MIN_OFFSET)) {
       commit('save');
-    } else if (info.offset.x < -SWIPE_OFFSET_THRESHOLD || info.velocity.x < -SWIPE_VELOCITY_THRESHOLD) {
+    } else if (offset < -SWIPE_OFFSET_THRESHOLD || (velocity < -SWIPE_VELOCITY_THRESHOLD && offset < -FLICK_MIN_OFFSET)) {
       commit('pass');
     } else {
       animate(x, 0, { type: 'spring', stiffness: 400, damping: 30 });
@@ -154,7 +164,25 @@ function TopCard({ card, now, onCommit, onOpen, commitRef, x }: TopCardProps) {
       initial={{ scale: 0.98 }}
       animate={{ scale: 1 }}
       onDragEnd={handleDragEnd}
-      onTap={onOpen}
+      // Our own tap check instead of framer's onTap, which could also fire at the end of a short
+      // swipe and open the details page. Any drag, or more than a few pixels of movement, is not a tap.
+      onPointerDown={(e) => {
+        pointerStart.current = { x: e.clientX, y: e.clientY, time: Date.now() };
+        dragged.current = false;
+      }}
+      onDragStart={() => {
+        dragged.current = true;
+      }}
+      onPointerCancel={() => {
+        pointerStart.current = null;
+      }}
+      onPointerUp={(e) => {
+        const start = pointerStart.current;
+        pointerStart.current = null;
+        if (!start || dragged.current || committed.current) return;
+        const moved = Math.hypot(e.clientX - start.x, e.clientY - start.y);
+        if (moved <= TAP_MAX_MOVEMENT && Date.now() - start.time <= TAP_MAX_MS) onOpen();
+      }}
       role="button"
       tabIndex={0}
       aria-label={`${card.event.title}. Press enter to view details, left arrow to pass, right arrow to save.`}
