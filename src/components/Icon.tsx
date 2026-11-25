@@ -91,14 +91,6 @@ export function IconUser({ size = 16, className }: IconProps) {
   );
 }
 
-export function IconSparkle({ size = 14, className }: IconProps) {
-  return (
-    <svg width={size} height={size} className={className} {...base} fill="currentColor" stroke="none" aria-hidden="true">
-      <path d="M10 2.5 11.4 7.6 16.5 9 11.4 10.4 10 15.5 8.6 10.4 3.5 9 8.6 7.6Z" />
-    </svg>
-  );
-}
-
 export function IconAccessibility({ size = 16, className }: IconProps) {
   return (
     <svg width={size} height={size} className={className} {...base} aria-hidden="true">

@@ -1,5 +1,5 @@
 import { EventImage } from './EventImage';
-import { IconCalendar, IconMapPin, IconSparkle } from './Icon';
+import { IconCalendar, IconMapPin } from './Icon';
 import { formatEventTimeParts } from '../lib/time';
 import { spotsLeft } from '../store/selectors';
 import type { CampusEvent } from '../types';
@@ -7,23 +7,16 @@ import './EventCard.css';
 
 interface Props {
   event: CampusEvent;
-  isOutsideInterests?: boolean;
   now: Date;
 }
 
-export function EventCard({ event, isOutsideInterests, now }: Props) {
+export function EventCard({ event, now }: Props) {
   const left = spotsLeft(event);
   const time = formatEventTimeParts(event, now);
 
   return (
     <div className="event-card">
       <div className="event-card__body">
-        {isOutsideInterests && (
-          <span className="pill event-card__new">
-            <IconSparkle /> Something new
-          </span>
-        )}
-
         <h2 className="event-card__title">{event.title}</h2>
 
         <div className="event-card__meta">

@@ -37,13 +37,6 @@ values
   ('Peer tutoring drop-in: Calc 1110', 'Free drop-in tutoring, come with questions or just to work through problems together.', 'services', 'student', 'Sofia G.', 'sg734', now() + interval '12 hours', now() + interval '14 hours', 'Mann Library', null, null, null, null),
   ('Resume review walk-ins', 'Quick, casual resume reviews, no appointment needed, just bring a printed or digital copy.', 'services', 'student', 'Caleb J.', 'cj398', now() + interval '145 hours', now() + interval '147 hours', 'Willard Straight', null, 8, null, null);
 
--- Photos: each seeded event points at seed/<title-slug>.jpg in the "event-photos" storage bucket.
--- Upload real photos with those names (see supabase/seed-photos.md). Until a file exists,
--- the app falls back to the category placeholder.
-update public.events
-set photo_path = 'seed/' || trim(both '-' from regexp_replace(lower(title), '[^a-z0-9]+', '-', 'g')) || '.jpg'
-where organizer_id is null;
-
 -- Organizer updates on a few seeded events (PRD: at least 2), so "check what changed" can be tested.
 insert into public.event_updates (event_id, type, message, created_at)
 select e.id, u.type, u.message, now() - u.ago

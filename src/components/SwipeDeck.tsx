@@ -60,7 +60,7 @@ export function SwipeDeck({ cards, now, onSwipe, onOpen, onJoinEvent }: Props) {
             className="swipe-deck__card swipe-deck__card--back"
             style={{ scale: backScale, y: backY, opacity: backOpacity }}
           >
-            <EventCard event={next.event} isOutsideInterests={next.isOutsideInterests} now={now} />
+            <EventCard event={next.event} now={now} />
           </motion.div>
         )}
         <TopCard
@@ -202,7 +202,7 @@ function TopCard({ card, now, onCommit, onOpen, commitRef, x }: TopCardProps) {
       <motion.span className="swipe-deck__label swipe-deck__label--pass" style={{ opacity: passOpacity, scale: passScale, rotate: 8 }}>
         PASS
       </motion.span>
-      <EventCard event={card.event} isOutsideInterests={card.isOutsideInterests} now={now} />
+      <EventCard event={card.event} now={now} />
     </motion.div>
   );
 }

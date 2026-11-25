@@ -23,7 +23,7 @@ Demo event times are relative to when `seed.sql` was run; re-run it to refresh t
 ## Event photos
 
 - Events posted in the app upload a photo from the Create form. It is resized to at most 1600px in the browser before upload.
-- Seeded events each look for `seed/<event-name>.jpg` in the `event-photos` bucket. The file names are listed in [`supabase/seed-photos.md`](supabase/seed-photos.md). Until a file is uploaded, the app shows the category placeholder.
+- Seeded demo events have no photos and show their category placeholder.
 
 ## Maps
 
