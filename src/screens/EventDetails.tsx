@@ -7,7 +7,7 @@ import { EventImage } from '../components/EventImage';
 import { EventNotFound } from '../components/EventNotFound';
 import { PostUpdateSheet } from '../components/PostUpdateSheet';
 import { ReportSheet } from '../components/ReportSheet';
-import { IconArrowLeft, IconBookmark, IconCheck } from '../components/Icon';
+import { IconArrowLeft, IconBookmark, IconCheck, IconPencil } from '../components/Icon';
 import { UpdateList } from '../components/UpdateList';
 import { isFull, isPast, spotsLeft } from '../store/selectors';
 import { useAppStore } from '../store/useAppStore';
@@ -39,9 +39,20 @@ export function EventDetails() {
 
   return (
     <div className="screen">
-      <button type="button" className="event-details__back" onClick={() => navigate(-1)} aria-label="Back">
-        <IconArrowLeft /> Back
-      </button>
+      <div className="event-details__topbar">
+        <button type="button" className="event-details__back" onClick={() => navigate(-1)} aria-label="Back">
+          <IconArrowLeft /> Back
+        </button>
+        {isHost && !event.cancelled && !isPast(event, now) && (
+          <button
+            type="button"
+            className="btn btn--secondary btn--sm event-details__edit"
+            onClick={() => navigate(`/events/${event.id}/edit`)}
+          >
+            <IconPencil size={14} /> Edit
+          </button>
+        )}
+      </div>
 
       {event.cancelled && <div className="event-details__cancelled">This event was cancelled.</div>}
 

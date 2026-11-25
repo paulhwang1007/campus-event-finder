@@ -1,6 +1,8 @@
+import { AnimatePresence, motion } from 'framer-motion';
 import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { CategoryChips } from '../components/CategoryChips';
+import { EventList } from '../components/EventList';
 import { IconCheck } from '../components/Icon';
 import { SwipeDeck } from '../components/SwipeDeck';
 import { useAppStore } from '../store/useAppStore';
@@ -11,6 +13,8 @@ import './Feed.css';
 export function Feed() {
   const navigate = useNavigate();
   const [category, setCategory] = useState<CategoryId | 'all'>('all');
+  const [params, setParams] = useSearchParams();
+  const view: View = params.get('view') === 'list' ? 'list' : 'swipe';
   const user = useAppStore((s) => s.user);
   const events = useAppStore((s) => s.events);
   const savedIds = useAppStore((s) => s.savedIds);
@@ -29,24 +33,77 @@ export function Feed() {
   return (
     <div className="screen screen--main">
       <h1 className="page-heading">Discover<br />Events</h1>
-      <CategoryChips value={category} onChange={setCategory} />
+      <ViewToggle
+        value={view}
+        onChange={(next) => setParams(next === 'list' ? { view: 'list' } : {}, { replace: true })}
+      />
 
-      {cards.length > 0 ? (
-        <SwipeDeck
-          cards={cards}
-          now={now}
-          onSwipe={(eventId, action) => swipe(eventId, action)}
-          onOpen={(eventId) => navigate(`/events/${eventId}`)}
-          onJoinEvent={(event) => navigate(`/events/${event.id}/confirm`)}
-        />
-      ) : (
-        <EmptyState
-          filtered={category !== 'all'}
-          onReset={passedIds.length > 0 ? resetPassed : undefined}
-          onSeeInterested={() => navigate('/interested')}
-          onHost={() => navigate('/create')}
-        />
-      )}
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={view}
+          className="feed__view"
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -6 }}
+          transition={{ duration: 0.16 }}
+        >
+          {view === 'list' ? (
+            <>
+              <CategoryChips value={category} onChange={setCategory} />
+              <EventList category={category} now={now} />
+            </>
+          ) : (
+            <>
+              <CategoryChips value={category} onChange={setCategory} />
+
+              {cards.length > 0 ? (
+                <SwipeDeck
+                  cards={cards}
+                  now={now}
+                  onSwipe={(eventId, action) => swipe(eventId, action)}
+                  onOpen={(eventId) => navigate(`/events/${eventId}`)}
+                  onJoinEvent={(event) => navigate(`/events/${event.id}/confirm`)}
+                />
+              ) : (
+                <EmptyState
+                  filtered={category !== 'all'}
+                  onReset={passedIds.length > 0 ? resetPassed : undefined}
+                  onSeeInterested={() => navigate('/interested')}
+                  onHost={() => navigate('/create')}
+                />
+              )}
+            </>
+          )}
+        </motion.div>
+      </AnimatePresence>
+    </div>
+  );
+}
+
+type View = 'swipe' | 'list';
+
+function ViewToggle({ value, onChange }: { value: View; onChange: (view: View) => void }) {
+  return (
+    <div className="feed__toggle" role="radiogroup" aria-label="How to browse events">
+      {(['swipe', 'list'] as const).map((option) => (
+        <button
+          key={option}
+          type="button"
+          role="radio"
+          aria-checked={value === option}
+          className={`feed__toggle-option${value === option ? ' feed__toggle-option--active' : ''}`}
+          onClick={() => onChange(option)}
+        >
+          {value === option && (
+            <motion.span
+              layoutId="feed-view-toggle"
+              className="feed__toggle-indicator"
+              transition={{ type: 'spring', stiffness: 500, damping: 40 }}
+            />
+          )}
+          <span className="feed__toggle-label">{option === 'swipe' ? 'Swipe' : 'List'}</span>
+        </button>
+      ))}
     </div>
   );
 }

@@ -1,7 +1,10 @@
+import { format, startOfDay } from 'date-fns';
 import type { ReactNode } from 'react';
-import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { categories } from '../data/categories';
+import { PLACES } from '../data/places';
+import { EventNotFound } from '../components/EventNotFound';
 import { DateTimePicker, formatTime } from '../components/DateTimePicker';
 import {
   IconArrowLeft,
@@ -14,8 +17,9 @@ import {
   IconX,
 } from '../components/Icon';
 import { preparePhoto } from '../lib/image';
-import { combineDateAndTime, validateEventForm, type EventDraft } from '../lib/validation';
-import { formatDayHeading } from '../lib/time';
+import { combineDateAndTime, validateEventForm, type EditContext, type EventDraft } from '../lib/validation';
+import { formatDayHeading, isPast } from '../lib/time';
+import type { CampusEvent, PhotoChange } from '../types';
 import { useAppStore } from '../store/useAppStore';
 import { SuccessCheck } from '../components/SuccessCheck';
 import './CreateEvent.css';
@@ -35,23 +39,60 @@ const EMPTY_DRAFT: EventDraft = {
   policyAck: false,
 };
 
-function isDraftTouched(draft: EventDraft): boolean {
-  return (
-    draft.title !== '' ||
-    draft.description !== '' ||
-    draft.category !== null ||
-    draft.date !== null ||
-    draft.locationName !== '' ||
-    draft.clubName !== ''
-  );
+/** The form filled in from an existing event, for editing. */
+function draftFromEvent(event: CampusEvent): EventDraft {
+  const start = new Date(event.start);
+  return {
+    title: event.title,
+    description: event.description,
+    category: event.category,
+    date: startOfDay(start),
+    startTime: format(start, 'HH:mm'),
+    endTime: format(new Date(event.end), 'HH:mm'),
+    locationName: event.locationName,
+    capacityMode: event.capacity != null ? 'limited' : 'unlimited',
+    capacityValue: String(event.capacity ?? 10),
+    organizerType: event.organizerType,
+    clubName: event.organizerType === 'club' ? event.organizerName : '',
+    policyAck: true,
+  };
+}
+
+function draftsDiffer(a: EventDraft, b: EventDraft): boolean {
+  return (Object.keys(a) as (keyof EventDraft)[]).some((key) => {
+    const x = a[key];
+    const y = b[key];
+    if (x instanceof Date || y instanceof Date) return (x as Date | null)?.getTime() !== (y as Date | null)?.getTime();
+    return x !== y;
+  });
 }
 
 export function CreateEvent() {
+  return <EventForm />;
+}
+
+/** /events/:id/edit: only the host, and only while the event is still on. */
+export function EditEvent() {
+  const { id } = useParams();
+  const user = useAppStore((s) => s.user);
+  const event = useAppStore((s) => s.events.find((e) => e.id === id));
+  if (!event) return <EventNotFound />;
+  const isHost = user != null && event.organizerNetId === user.netId;
+  if (!isHost || event.cancelled || isPast(event, new Date())) return <Navigate to={`/events/${event.id}`} replace />;
+  return <EventForm key={event.id} event={event} />;
+}
+
+/** The Create form, which also edits an existing event when given one. */
+function EventForm({ event }: { event?: CampusEvent }) {
+  const isEdit = event != null;
   const navigate = useNavigate();
   const user = useAppStore((s) => s.user);
   const createEvent = useAppStore((s) => s.createEvent);
+  const editEvent = useAppStore((s) => s.editEvent);
+  const showToast = useAppStore((s) => s.showToast);
+  const initialDraft = useMemo(() => (event ? draftFromEvent(event) : EMPTY_DRAFT), [event]);
   const [view, setView] = useState<'form' | 'datetime' | 'success'>('form');
-  const [draft, setDraft] = useState<EventDraft>(EMPTY_DRAFT);
+  const [draft, setDraft] = useState<EventDraft>(initialDraft);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [postedId, setPostedId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -59,6 +100,10 @@ export function CreateEvent() {
   const fieldRefs = useRef<Record<string, HTMLElement | null>>({});
   const [photo, setPhoto] = useState<Blob | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  /** Editing: the host removed the event's existing photo. */
+  const [photoRemoved, setPhotoRemoved] = useState(false);
+  const existingPhoto = !photo && !photoRemoved ? event?.photoUrl : undefined;
+  const shownPhoto = photoPreview ?? existingPhoto ?? null;
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [preparingPhoto, setPreparingPhoto] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
@@ -78,6 +123,7 @@ export function CreateEvent() {
       const prepared = await preparePhoto(file);
       setPhoto(prepared);
       setPhotoPreview(URL.createObjectURL(prepared));
+      setPhotoRemoved(false);
     } catch (err) {
       setPhotoError(err instanceof Error ? err.message : "Couldn't use that photo.");
     } finally {
@@ -89,21 +135,27 @@ export function CreateEvent() {
   function removePhoto() {
     setPhoto(null);
     setPhotoPreview(null);
+    if (isEdit) setPhotoRemoved(true);
   }
 
   function update<K extends keyof EventDraft>(key: K, value: EventDraft[K]) {
     setDraft((d) => ({ ...d, [key]: value }));
   }
 
+  const hasChanges = draftsDiffer(draft, initialDraft) || photo != null || photoRemoved;
+
   function handleBack() {
-    if ((isDraftTouched(draft) || photo) && !window.confirm('Discard this event?')) return;
+    if (hasChanges && !window.confirm(isEdit ? 'Discard your changes?' : 'Discard this event?')) return;
     navigate(-1);
   }
 
   async function handleSubmit() {
     if (submitting) return;
     const now = new Date();
-    const formErrors = validateEventForm(draft, now);
+    const editContext: EditContext | undefined = event
+      ? { originalStart: new Date(event.start), goingCount: event.goingCount }
+      : undefined;
+    const formErrors = validateEventForm(draft, now, editContext);
     setErrors(formErrors);
     if (Object.keys(formErrors).length > 0) {
       const firstKey = Object.keys(formErrors)[0];
@@ -113,20 +165,44 @@ export function CreateEvent() {
 
     const start = combineDateAndTime(draft.date!, draft.startTime)!;
     const end = combineDateAndTime(draft.date!, draft.endTime)!;
+    const timeUnchanged =
+      event != null &&
+      draft.date?.getTime() === initialDraft.date?.getTime() &&
+      draft.startTime === initialDraft.startTime &&
+      draft.endTime === initialDraft.endTime;
+    const input = {
+      title: draft.title.trim(),
+      description: draft.description.trim(),
+      category: draft.category!,
+      organizerType: draft.organizerType,
+      organizerName: draft.organizerType === 'club' ? draft.clubName.trim() : (user?.name ?? 'You'),
+      // An untouched time keeps the exact original value (the form only shows minutes).
+      start: timeUnchanged ? event.start : start.toISOString(),
+      end: timeUnchanged ? event.end : end.toISOString(),
+      locationName: draft.locationName.trim(),
+      capacity: draft.capacityMode === 'limited' ? Number(draft.capacityValue) : undefined,
+    };
+
+    if (event) {
+      const photoChange: PhotoChange = photo
+        ? { kind: 'replace', photo }
+        : photoRemoved
+          ? { kind: 'remove' }
+          : { kind: 'keep' };
+      setSubmitting(true);
+      const ok = await editEvent(event.id, input, photoChange);
+      setSubmitting(false);
+      if (ok) {
+        showToast('Changes saved');
+        navigate(`/events/${event.id}`, { replace: true });
+      }
+      return;
+    }
+
     setSubmitting(true);
     setSubmitError(null);
     try {
-      const newId = await createEvent({
-        title: draft.title.trim(),
-        description: draft.description.trim(),
-        category: draft.category!,
-        organizerType: draft.organizerType,
-        organizerName: draft.organizerType === 'club' ? draft.clubName.trim() : (user?.name ?? 'You'),
-        start: start.toISOString(),
-        end: end.toISOString(),
-        locationName: draft.locationName.trim(),
-        capacity: draft.capacityMode === 'limited' ? Number(draft.capacityValue) : undefined,
-      }, photo);
+      const newId = await createEvent(input, photo);
       setPostedId(newId);
       setView('success');
     } catch (err) {
@@ -176,7 +252,12 @@ export function CreateEvent() {
         <IconArrowLeft /> Back
       </button>
 
-      <h1 className="page-heading">Create event</h1>
+      <h1 className="page-heading">{isEdit ? 'Edit event' : 'Create event'}</h1>
+      {isEdit && (
+        <p className="create-event__edit-hint">
+          Changing the time or location posts an update, so everyone who saved this event is told.
+        </p>
+      )}
 
       <Field label="Event name" error={errors.title} refEl={(el) => (fieldRefs.current.title = el)}>
         <input
@@ -219,7 +300,14 @@ export function CreateEvent() {
             className="create-event__input create-event__input--with-icon"
             value={draft.locationName}
             onChange={(e) => update('locationName', e.target.value)}
+            list="create-event-places"
+            autoComplete="off"
           />
+          <datalist id="create-event-places">
+            {PLACES.map((place) => (
+              <option key={place.name} value={place.name} />
+            ))}
+          </datalist>
         </div>
       </Field>
 
@@ -232,9 +320,9 @@ export function CreateEvent() {
           id="create-event-photo"
           onChange={(e) => void handlePhoto(e.target.files?.[0])}
         />
-        {photoPreview ? (
+        {shownPhoto ? (
           <div className="create-event__photo-preview">
-            <img src={photoPreview} alt="Selected event photo" />
+            <img src={shownPhoto} alt={photoPreview ? 'Selected event photo' : 'Current event photo'} />
             <div className="create-event__photo-actions">
               <label htmlFor="create-event-photo" className="create-event__photo-change">
                 Change
@@ -326,24 +414,26 @@ export function CreateEvent() {
         />
       </Field>
 
-      <label
-        className="create-event__policy"
-        ref={(el) => {
-          fieldRefs.current.policy = el;
-        }}
-      >
-        <input
-          type="checkbox"
-          checked={draft.policyAck}
-          onChange={(e) => update('policyAck', e.target.checked)}
-        />
-        <span>I understand Cornell's space reservation and conduct policies.</span>
-      </label>
+      {!isEdit && (
+        <label
+          className="create-event__policy"
+          ref={(el) => {
+            fieldRefs.current.policy = el;
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={draft.policyAck}
+            onChange={(e) => update('policyAck', e.target.checked)}
+          />
+          <span>I understand Cornell's space reservation and conduct policies.</span>
+        </label>
+      )}
       {errors.policy && <p className="create-event__error">{errors.policy}</p>}
 
       {submitError && <p className="create-event__error">{submitError}</p>}
       <button type="button" className="create-event__submit" onClick={handleSubmit} disabled={submitting}>
-        {submitting ? 'Posting…' : 'Post event'}
+        {isEdit ? (submitting ? 'Saving…' : 'Save changes') : submitting ? 'Posting…' : 'Post event'}
       </button>
     </div>
   );

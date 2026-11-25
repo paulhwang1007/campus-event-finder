@@ -208,3 +208,14 @@
 .event-details__report:hover {
   color: var(--color-danger);
 }
+
+.event-details__topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.event-details__topbar .event-details__back {
+  align-self: center;
+}

@@ -7,6 +7,7 @@ vi.mock('../lib/api', () => ({
   uploadEventPhoto: vi.fn(),
   createEvent: vi.fn(),
   deleteEventPhoto: vi.fn(() => Promise.resolve()),
+  editEvent: vi.fn(),
 }));
 vi.mock('../lib/supabase', () => ({ supabase: {} }));
 
@@ -147,5 +148,66 @@ describe('createEvent with a photo', () => {
       ),
     ).rejects.toThrow('offline');
     expect(api.deleteEventPhoto).toHaveBeenCalledWith('user/photo.jpg');
+  });
+});
+
+describe('editEvent', () => {
+  const input = {
+    title: 'New title',
+    description: 'desc',
+    category: 'food' as const,
+    organizerType: 'student' as const,
+    organizerName: 'Host',
+    start: '2099-01-01T17:00:00.000Z',
+    end: '2099-01-01T19:00:00.000Z',
+    locationName: 'Noyes',
+  };
+
+  beforeEach(() => {
+    useAppStore.setState({ events: [makeEvent('a', { photoPath: 'host/old.jpg', photoUrl: 'https://x/old.jpg' })] });
+  });
+
+  it('sends no updates for a title-only change, and keeps the photo', async () => {
+    vi.mocked(api.editEvent).mockResolvedValue(makeEvent('a', { title: 'New title', photoPath: 'host/old.jpg' }));
+
+    const ok = await useAppStore.getState().editEvent('a', input, { kind: 'keep' });
+
+    expect(ok).toBe(true);
+    expect(api.editEvent).toHaveBeenCalledWith('a', input, 'host/old.jpg', []);
+    expect(api.deleteEventPhoto).not.toHaveBeenCalled();
+    expect(useAppStore.getState().events[0].title).toBe('New title');
+  });
+
+  it('sends a location update when the location changes', async () => {
+    vi.mocked(api.editEvent).mockResolvedValue(makeEvent('a'));
+
+    await useAppStore.getState().editEvent('a', { ...input, locationName: 'Mann Library' }, { kind: 'keep' });
+
+    const updates = vi.mocked(api.editEvent).mock.calls[0][3];
+    expect(updates).toEqual([{ type: 'location', message: 'Location changed from Noyes to Mann Library.' }]);
+  });
+
+  it('deletes the old photo only after a replacement saves', async () => {
+    vi.mocked(api.uploadEventPhoto).mockResolvedValue('host/new.jpg');
+    vi.mocked(api.editEvent).mockResolvedValue(makeEvent('a', { photoPath: 'host/new.jpg' }));
+
+    await useAppStore.getState().editEvent('a', input, { kind: 'replace', photo: new Blob(['x']) });
+
+    expect(api.editEvent).toHaveBeenCalledWith('a', input, 'host/new.jpg', []);
+    expect(api.deleteEventPhoto).toHaveBeenCalledWith('host/old.jpg');
+    expect(api.deleteEventPhoto).not.toHaveBeenCalledWith('host/new.jpg');
+  });
+
+  it('keeps the old photo and removes the new upload if saving fails', async () => {
+    vi.mocked(api.uploadEventPhoto).mockResolvedValue('host/new.jpg');
+    vi.mocked(api.editEvent).mockRejectedValue({ code: 'P0001', message: "6 people are going, so spots can't be lower than 6." });
+
+    const ok = await useAppStore.getState().editEvent('a', input, { kind: 'replace', photo: new Blob(['x']) });
+
+    expect(ok).toBe(false);
+    expect(api.deleteEventPhoto).toHaveBeenCalledWith('host/new.jpg');
+    expect(api.deleteEventPhoto).not.toHaveBeenCalledWith('host/old.jpg');
+    expect(useAppStore.getState().events[0].photoPath).toBe('host/old.jpg');
+    expect(useAppStore.getState().toast?.message).toBe("6 people are going, so spots can't be lower than 6.");
   });
 });

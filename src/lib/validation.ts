@@ -27,7 +27,15 @@ export function combineDateAndTime(date: Date, time: string): Date | null {
   return combined;
 }
 
-export function validateEventForm(draft: EventDraft, now: Date): Record<string, string> {
+/** Extra rules when a host edits an existing event. */
+export interface EditContext {
+  /** The event's current start. Keeping it is allowed even if it's already in the past (the event started). */
+  originalStart: Date;
+  /** People already going: spots can't go below this. */
+  goingCount: number;
+}
+
+export function validateEventForm(draft: EventDraft, now: Date, edit?: EditContext): Record<string, string> {
   const errors: Record<string, string> = {};
 
   if (!draft.title.trim()) errors.title = 'Title is required.';
@@ -48,7 +56,10 @@ export function validateEventForm(draft: EventDraft, now: Date): Record<string, 
       errors.date = 'Pick a date and time.';
     } else if (end <= start) {
       errors.date = 'End time must be after start time.';
-    } else if (start.getTime() < now.getTime() - PAST_GRACE_MS) {
+    } else if (
+      start.getTime() < now.getTime() - PAST_GRACE_MS &&
+      !(edit && Math.floor(start.getTime() / 60000) === Math.floor(edit.originalStart.getTime() / 60000))
+    ) {
       errors.date = "Start time can't be in the past.";
     }
   }
@@ -59,6 +70,8 @@ export function validateEventForm(draft: EventDraft, now: Date): Record<string, 
     const value = Number(draft.capacityValue);
     if (!Number.isInteger(value) || value < 2 || value > 500) {
       errors.capacity = 'Capacity must be a number between 2 and 500.';
+    } else if (edit && value < edit.goingCount) {
+      errors.capacity = `${edit.goingCount} people are going, so spots can't be lower than ${edit.goingCount}.`;
     }
   }
 
@@ -66,7 +79,8 @@ export function validateEventForm(draft: EventDraft, now: Date): Record<string, 
     errors.clubName = 'Club name is required.';
   }
 
-  if (!draft.policyAck) {
+  // Already acknowledged when the event was first posted.
+  if (!edit && !draft.policyAck) {
     errors.policy = 'You must acknowledge the policy before posting.';
   }
 

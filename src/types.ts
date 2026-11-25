@@ -60,6 +60,8 @@ export interface CampusEvent {
   updates: EventUpdate[];
   /** Public URL of the event photo, if it has one. */
   photoUrl?: string;
+  /** Where the photo lives in storage; needed to replace or delete it. */
+  photoPath?: string;
   cancelled: boolean;
   createdAt: string;
 }
@@ -77,6 +79,12 @@ export interface NewEventInput {
   /** Storage path returned by uploadEventPhoto. */
   photoPath?: string;
 }
+
+/** Everything a host can change when editing. Photo changes are passed separately. */
+export type EventEditInput = Omit<NewEventInput, 'photoPath'>;
+
+/** What to do with an event's photo when saving an edit. */
+export type PhotoChange = { kind: 'keep' } | { kind: 'remove' } | { kind: 'replace'; photo: Blob };
 
 /** What a host submits from "Post update". Time and location changes also change the event. */
 export type NewUpdateInput =

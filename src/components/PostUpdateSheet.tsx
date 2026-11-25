@@ -1,7 +1,7 @@
 import { format } from 'date-fns';
 import { useState } from 'react';
+import { locationChangeMessage, timeChangeMessage } from '../lib/updateMessages';
 import { combineDateAndTime } from '../lib/validation';
-import { formatDayHeading } from '../lib/time';
 import { useAppStore } from '../store/useAppStore';
 import type { CampusEvent, EventUpdate, NewUpdateInput } from '../types';
 import { Sheet } from './Sheet';
@@ -14,10 +14,6 @@ const TYPES: { id: EventUpdate['type']; label: string }[] = [
   { id: 'location', label: 'Location' },
   { id: 'note', label: 'Note' },
 ];
-
-function describeTime(start: Date, end: Date, now: Date): string {
-  return `${formatDayHeading(start, now)} ${format(start, 'h:mm')}–${format(end, 'h:mm a')}`;
-}
 
 interface Props {
   event: CampusEvent;
@@ -61,14 +57,14 @@ export function PostUpdateSheet({ event, open, onClose }: Props) {
     else if (newStart.getTime() === oldStart.getTime() && newEnd.getTime() === oldEnd.getTime())
       problem = "That's the same time as before.";
     else {
-      const message = `Time changed from ${describeTime(oldStart, oldEnd, now)} to ${describeTime(newStart, newEnd, now)}.${trimmedNote ? ` ${trimmedNote}` : ''}`;
+      const message = timeChangeMessage({ start: oldStart, end: oldEnd }, { start: newStart, end: newEnd }, now, trimmedNote);
       input = { type, message, start: newStart.toISOString(), end: newEnd.toISOString() };
     }
   } else if (type === 'location') {
     if (!trimmedLocation) problem = 'Enter the new location.';
     else if (trimmedLocation === event.locationName) problem = "That's the same location as before.";
     else {
-      const message = `Location changed from ${event.locationName} to ${trimmedLocation}.${trimmedNote ? ` ${trimmedNote}` : ''}`;
+      const message = locationChangeMessage(event.locationName, trimmedLocation, trimmedNote);
       input = { type, message, locationName: trimmedLocation };
     }
   } else if (!trimmedNote) {

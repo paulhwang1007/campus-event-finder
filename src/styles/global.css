@@ -60,18 +60,20 @@ a {
 }
 
 .screen {
+  /* Read by sticky headers so they can stick to the very top, above this padding. */
+  --screen-pad-top: var(--space-6);
   flex: 1;
   display: flex;
   flex-direction: column;
   padding: var(--space-4);
-  padding-top: var(--space-6);
+  padding-top: var(--screen-pad-top);
   gap: var(--space-4);
   overflow-y: auto;
 }
 
 /* Main tab screens leave more air above the page heading, as in the Figma. */
 .screen--main {
-  padding-top: 56px;
+  --screen-pad-top: 56px;
 }
 
 /* Red display heading at the top of each main screen. */

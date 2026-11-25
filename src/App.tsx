@@ -5,7 +5,7 @@ import { Navigate, Route, Routes, useLocation, useOutlet } from 'react-router-do
 import { BottomNav } from './components/BottomNav';
 import { Toast } from './components/Toast';
 import { supabase, supabaseConfigured } from './lib/supabase';
-import { CreateEvent } from './screens/CreateEvent';
+import { CreateEvent, EditEvent } from './screens/CreateEvent';
 import { EventConfirm } from './screens/EventConfirm';
 import { EventDetails } from './screens/EventDetails';
 import { Feed } from './screens/Feed';
@@ -123,6 +123,7 @@ function App() {
           <Route path="/profile/edit" element={<ProfileSetup mode="edit" />} />
           <Route path="/events/:id" element={<EventDetails />} />
           <Route path="/events/:id/confirm" element={<EventConfirm />} />
+          <Route path="/events/:id/edit" element={<EditEvent />} />
           <Route path="*" element={<Navigate to="/feed" replace />} />
         </Route>
       </Routes>

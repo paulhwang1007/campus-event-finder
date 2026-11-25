@@ -2,6 +2,7 @@ import { format } from 'date-fns';
 import type { ReactNode } from 'react';
 import { IconAccessibility, IconCalendar, IconMapPin } from './Icon';
 import { isOngoing } from '../lib/time';
+import { EventMap } from './EventMap';
 import type { CampusEvent } from '../types';
 import './EventFieldList.css';
 
@@ -23,6 +24,7 @@ export function EventFieldList({ event, now }: Props) {
       <Field icon={<IconMapPin size={14} />} label="Where">
         {event.locationName}
         {event.locationNote ? ` — ${event.locationNote}` : ''}
+        <EventMap locationName={event.locationName} />
       </Field>
 
       <Field label="About">{event.description}</Field>

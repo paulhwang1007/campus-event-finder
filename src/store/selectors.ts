@@ -1,4 +1,5 @@
-import { isOngoing, isPast } from '../lib/time';
+import { startOfDay } from 'date-fns';
+import { formatDayHeading, isOngoing, isPast } from '../lib/time';
 import type { CampusEvent, CategoryId, User } from '../types';
 
 export { isOngoing, isPast };
@@ -140,4 +141,35 @@ export function spotsLeft(event: CampusEvent): number | null {
 
 export function isFull(event: CampusEvent): boolean {
   return spotsLeft(event) === 0;
+}
+
+export interface DayGroup {
+  /** Stable key: "now" or the day's date, e.g. "2026-11-28". */
+  key: string;
+  /** "Happening now", "Today", "Tomorrow", or e.g. "Sat Nov 28". */
+  label: string;
+  events: CampusEvent[];
+}
+
+/**
+ * Groups events for the All Events list: anything ongoing first under "Happening now",
+ * then one group per day in date order, each sorted by start time.
+ */
+export function groupEventsByDay(events: CampusEvent[], now: Date): DayGroup[] {
+  const ongoing = events.filter((e) => isOngoing(e, now));
+  const upcoming = events
+    .filter((e) => !isOngoing(e, now))
+    .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
+
+  const groups: DayGroup[] = [];
+  if (ongoing.length > 0) groups.push({ key: 'now', label: 'Happening now', events: sortByStart(ongoing, now) });
+
+  for (const event of upcoming) {
+    const day = startOfDay(new Date(event.start));
+    const key = day.toISOString();
+    const last = groups[groups.length - 1];
+    if (last && last.key === key) last.events.push(event);
+    else groups.push({ key, label: formatDayHeading(day, now), events: [event] });
+  }
+  return groups;
 }

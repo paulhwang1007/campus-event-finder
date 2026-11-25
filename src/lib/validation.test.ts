@@ -79,3 +79,41 @@ describe('combineDateAndTime', () => {
     expect(combineDateAndTime(new Date(), 'not-a-time')).toBeNull();
   });
 });
+
+describe('validateEventForm when editing', () => {
+  // The event started at 2:00 PM on Nov 2 and it's now 3:30 PM.
+  const editNow = new Date(2026, 10, 2, 15, 30);
+  const edit = { originalStart: new Date(2026, 10, 2, 14, 0), goingCount: 6 };
+
+  it('lets an event that already started keep its start time', () => {
+    const draft = makeDraft({ startTime: '14:00', endTime: '17:00' });
+    expect(validateEventForm(draft, editNow)).toHaveProperty('date'); // creating: too far in the past
+    expect(validateEventForm(draft, editNow, edit)).toEqual({});
+  });
+
+  it('still refuses moving the start to a different past time', () => {
+    const draft = makeDraft({ startTime: '13:00', endTime: '17:00' });
+    expect(validateEventForm(draft, editNow, edit)).toHaveProperty('date');
+  });
+
+  it("doesn't let spots drop below the number of people going", () => {
+    const errors = validateEventForm(
+      makeDraft({ startTime: '14:00', endTime: '17:00', capacityMode: 'limited', capacityValue: '5' }),
+      editNow,
+      edit,
+    );
+    expect(errors.capacity).toBe("6 people are going, so spots can't be lower than 6.");
+    expect(
+      validateEventForm(
+        makeDraft({ startTime: '14:00', endTime: '17:00', capacityMode: 'limited', capacityValue: '6' }),
+        editNow,
+        edit,
+      ),
+    ).toEqual({});
+  });
+
+  it("doesn't ask for the policy checkbox again", () => {
+    const draft = makeDraft({ startTime: '14:00', endTime: '17:00', policyAck: false });
+    expect(validateEventForm(draft, editNow, edit)).toEqual({});
+  });
+});

@@ -1,7 +1,17 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import * as api from '../lib/api';
-import type { CampusEvent, NewEventInput, NewUpdateInput, ProfileInput, ReportReason, User } from '../types';
+import { updatesForEdit } from '../lib/updateMessages';
+import type {
+  CampusEvent,
+  EventEditInput,
+  NewEventInput,
+  NewUpdateInput,
+  PhotoChange,
+  ProfileInput,
+  ReportReason,
+  User,
+} from '../types';
 
 type LoadStatus = 'idle' | 'loading' | 'ready' | 'error';
 
@@ -44,6 +54,8 @@ interface AppState {
   /** Uploads the photo first (if any), then creates the event. Resolves to the new event's id. */
   createEvent: (input: NewEventInput, photo?: Blob | null) => Promise<string>;
   cancelEvent: (eventId: string) => Promise<boolean>;
+  /** Host edit. Time or location changes also post an update so people who saved it are told. */
+  editEvent: (eventId: string, input: EventEditInput, photo: PhotoChange) => Promise<boolean>;
   postUpdate: (eventId: string, input: NewUpdateInput) => Promise<boolean>;
   reportEvent: (eventId: string, reason: ReportReason, note?: string) => Promise<boolean>;
   resetDemo: () => Promise<boolean>;
@@ -283,6 +295,38 @@ export const useAppStore = create<AppState>()(
             { events: events.map((e) => (e.id === eventId ? { ...e, cancelled: true } : e)) },
             () => api.cancelEvent(eventId),
           );
+        },
+
+        editEvent: async (eventId, input, photo) => {
+          const before = get().events.find((e) => e.id === eventId);
+          if (!before) return false;
+
+          let uploadedPath: string | null = null;
+          try {
+            if (photo.kind === 'replace') uploadedPath = await api.uploadEventPhoto(photo.photo);
+            const photoPath =
+              photo.kind === 'replace' ? uploadedPath : photo.kind === 'remove' ? null : (before.photoPath ?? null);
+            const updates = updatesForEdit(before, input, new Date());
+            const fresh = await api.editEvent(eventId, input, photoPath, updates);
+
+            const { events, lastSeenUpdateAt } = get();
+            const latest = fresh.updates[fresh.updates.length - 1];
+            set({
+              events: events.map((e) => (e.id === eventId ? fresh : e)),
+              // The host made these changes, so the updates aren't "new" to them.
+              lastSeenUpdateAt:
+                updates.length > 0 && latest ? { ...lastSeenUpdateAt, [eventId]: latest.createdAt } : lastSeenUpdateAt,
+            });
+
+            // Only now that the save worked, delete the photo that was replaced or removed.
+            if (photo.kind !== 'keep' && before.photoPath) void api.deleteEventPhoto(before.photoPath).catch(() => {});
+            return true;
+          } catch (err) {
+            console.error('Failed to save event changes', err);
+            if (uploadedPath) void api.deleteEventPhoto(uploadedPath).catch(() => {});
+            get().showToast(friendlyError(err), { tone: 'error' });
+            return false;
+          }
         },
 
         postUpdate: async (eventId, input) => {

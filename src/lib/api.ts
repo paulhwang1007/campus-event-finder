@@ -2,6 +2,7 @@ import type {
   CampusEvent,
   CategoryId,
   ClassYear,
+  EventEditInput,
   EventUpdate,
   NewEventInput,
   NewUpdateInput,
@@ -86,6 +87,7 @@ function toEvent(row: EventRow, updates: EventUpdate[] = []): CampusEvent {
     participation: row.participation ?? undefined,
     updates,
     photoUrl: photoUrl(row.photo_path),
+    photoPath: row.photo_path ?? undefined,
     cancelled: row.cancelled,
     createdAt: row.created_at,
   };
@@ -134,6 +136,41 @@ export async function fetchEvents(): Promise<CampusEvent[]> {
     byEvent.set(row.event_id, list);
   }
   return (events.data as EventRow[]).map((row) => toEvent(row, byEvent.get(row.id)));
+}
+
+export async function fetchEvent(eventId: string): Promise<CampusEvent> {
+  const [event, updates] = await Promise.all([
+    supabase.from('events_with_counts').select('*').eq('id', eventId).single(),
+    supabase.from('event_updates').select('*').eq('event_id', eventId).order('created_at', { ascending: true }),
+  ]);
+  if (event.error) throw event.error;
+  if (updates.error) throw updates.error;
+  return toEvent(event.data as EventRow, (updates.data as UpdateRow[]).map(toUpdate));
+}
+
+/** Saves all fields and posts the given automatic updates in one transaction, then returns the fresh event. */
+export async function editEvent(
+  eventId: string,
+  input: EventEditInput,
+  photoPath: string | null,
+  updates: { type: EventUpdate['type']; message: string }[],
+): Promise<CampusEvent> {
+  const { error } = await supabase.rpc('edit_event', {
+    p_event_id: eventId,
+    p_title: input.title,
+    p_description: input.description,
+    p_category: input.category,
+    p_organizer_type: input.organizerType,
+    p_organizer_name: input.organizerName,
+    p_start_at: input.start,
+    p_end_at: input.end,
+    p_location_name: input.locationName,
+    p_capacity: input.capacity ?? null,
+    p_photo_path: photoPath,
+    p_updates: updates,
+  });
+  if (error) throw error;
+  return fetchEvent(eventId);
 }
 
 export async function fetchMyReportedIds(): Promise<string[]> {

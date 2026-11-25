@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { getFeed, getInterested, getProfileEvents, hasUnreadUpdate, isFull, spotsLeft } from './selectors';
+import {
+  getFeed,
+  getInterested,
+  getProfileEvents,
+  groupEventsByDay,
+  hasUnreadUpdate,
+  isFull,
+  searchEvents,
+  spotsLeft,
+} from './selectors';
 import type { CampusEvent, User } from '../types';
 
 const now = new Date('2026-10-23T12:00:00.000Z');
@@ -220,5 +229,55 @@ describe('getFeed cancelled events', () => {
   it('leaves cancelled events out of the feed', () => {
     const state = { user, events: [makeEvent('live', {}), makeEvent('off', { cancelled: true })], savedIds: [], passedIds: [], reportedIds: [] };
     expect(getFeed(state, now).map((c) => c.event.id)).toEqual(['live']);
+  });
+});
+
+describe('groupEventsByDay', () => {
+  // Local-time dates, so day boundaries don't depend on the machine's time zone.
+  const localNow = new Date(2026, 9, 23, 12, 0); // Fri Oct 23, noon
+  const at = (day: number, hour: number) => new Date(2026, 9, day, hour, 0).toISOString();
+
+  it('puts ongoing events first, then one group per day in order', () => {
+    const events = [
+      makeEvent('sat', { start: at(24, 15), end: at(24, 16) }),
+      makeEvent('now', { start: at(23, 11), end: at(23, 13) }),
+      makeEvent('tonight', { start: at(23, 19), end: at(23, 21) }),
+      makeEvent('afternoon', { start: at(23, 14), end: at(23, 15) }),
+      makeEvent('later', { start: at(27, 10), end: at(27, 11) }),
+    ];
+
+    const groups = groupEventsByDay(events, localNow);
+
+    expect(groups.map((g) => g.label)).toEqual(['Happening now', 'Today', 'Tomorrow', 'Tue Oct 27']);
+    expect(groups.map((g) => g.events.map((e) => e.id))).toEqual([
+      ['now'],
+      ['afternoon', 'tonight'],
+      ['sat'],
+      ['later'],
+    ]);
+  });
+
+  it('returns no groups for no events', () => {
+    expect(groupEventsByDay([], localNow)).toEqual([]);
+  });
+
+  it('works with search and a category filter', () => {
+    const state = {
+      user: null,
+      events: [
+        makeEvent('pizza', { title: 'Study break pizza', category: 'food', start: at(23, 15), end: at(23, 16) }),
+        makeEvent('pizza-art', { title: 'Pizza box painting', category: 'arts', start: at(23, 15), end: at(23, 16) }),
+        makeEvent('bagels', { title: 'Bagel run', category: 'food', start: at(24, 9), end: at(24, 10) }),
+        makeEvent('old', { title: 'Old pizza', category: 'food', start: at(22, 9), end: at(22, 10) }),
+      ],
+      savedIds: ['pizza'],
+      passedIds: [],
+      reportedIds: [],
+    };
+
+    const found = searchEvents(state, localNow, 'pizza', 'food');
+
+    // Saved events still show in the list; past events don't.
+    expect(groupEventsByDay(found, localNow).map((g) => g.events.map((e) => e.id))).toEqual([['pizza']]);
   });
 });
