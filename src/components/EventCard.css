@@ -2,7 +2,7 @@
   width: 100%;
   height: 100%;
   background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-card);
   overflow: hidden;
@@ -19,28 +19,17 @@
   overflow-y: auto;
 }
 
-.event-card__top {
-  display: flex;
-  gap: var(--space-2);
-  flex-wrap: wrap;
-}
-
-.event-card__category-pill {
-  font-size: var(--text-caption-size);
-  line-height: var(--text-caption-lh);
-  color: var(--color-text-muted);
-}
-
 .event-card__new {
+  align-self: flex-start;
   background: var(--color-highlight);
   color: var(--color-text);
   border-color: var(--color-highlight);
 }
 
 .event-card__title {
-  font-size: var(--text-title2-size);
-  line-height: var(--text-title2-lh);
-  font-weight: var(--text-title2-weight);
+  font-size: var(--text-title1-size);
+  line-height: var(--text-title1-lh);
+  font-weight: 800;
   margin: 0;
 }
 
@@ -67,12 +56,6 @@
 .event-card__time-label {
   color: var(--color-primary);
   font-weight: var(--text-bodystrong-weight);
-}
-
-.event-card__organizer {
-  color: var(--color-text-muted);
-  font-size: var(--text-bodysm-size);
-  line-height: var(--text-bodysm-lh);
 }
 
 .event-card__image {
@@ -109,6 +92,6 @@
   line-height: var(--text-bodysm-lh);
   display: -webkit-box;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 1;
   overflow: hidden;
 }

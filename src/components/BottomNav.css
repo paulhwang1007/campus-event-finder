@@ -1,35 +1,51 @@
 .bottom-nav {
   flex: none;
   margin: 0 var(--space-4) var(--space-3);
-  padding: var(--space-2) var(--space-3);
+  padding: 6px var(--space-2);
   display: flex;
   justify-content: space-between;
-  gap: var(--space-2);
+  gap: var(--space-1);
   background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-full);
   box-shadow: var(--shadow-nav);
 }
 
 .bottom-nav__item {
+  position: relative;
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 2px;
-  padding: var(--space-1);
+  padding: var(--space-1) 0;
   border-radius: var(--radius-full);
   text-decoration: none;
-  color: var(--color-text-muted);
-  font-size: var(--text-caption-size);
-  line-height: var(--text-caption-lh);
-  font-weight: var(--text-caption-weight);
-}
-
-.bottom-nav__item svg {
-  flex: none;
+  color: var(--color-text);
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 600;
+  isolation: isolate;
+  transition: color var(--dur-med) var(--ease-out);
 }
 
 .bottom-nav__item--active {
   color: var(--color-primary);
+}
+
+/* Soft red pill that slides to the active tab. */
+.bottom-nav__indicator {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: var(--color-primary-soft);
+}
+
+.bottom-nav__icon {
+  display: flex;
+}
+
+.bottom-nav__icon svg {
+  flex: none;
 }

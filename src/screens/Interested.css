@@ -1,11 +1,3 @@
-.interested__heading {
-  font-size: var(--text-display-size);
-  line-height: var(--text-display-lh);
-  font-weight: var(--text-display-weight);
-  color: var(--color-primary);
-  margin: 0;
-}
-
 .interested__empty {
   flex: 1;
   display: flex;
@@ -13,35 +5,76 @@
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
+  padding: 0 var(--space-5);
   color: var(--color-text-muted);
   text-align: center;
 }
 
+.interested__empty p {
+  margin: 0;
+}
+
+.interested__empty .btn {
+  margin-top: var(--space-3);
+}
+
+.interested__empty-title {
+  color: var(--color-text);
+  font-size: var(--text-headline-size);
+  font-weight: var(--text-headline-weight);
+}
+
 .interested__empty-icon {
-  width: 44px;
-  height: 44px;
+  width: 52px;
+  height: 52px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-full);
-  background: var(--color-accent-4);
-  color: var(--color-on-primary);
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
   margin-bottom: var(--space-2);
 }
 
-.interested__empty-cta {
-  margin-top: var(--space-3);
-  padding: var(--space-2) var(--space-4);
+.interested__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.interested__section-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--text-bodystrong-size);
+  font-weight: 700;
+}
+
+.interested__count {
+  min-width: 20px;
+  padding: 0 6px;
   border-radius: var(--radius-full);
-  border: 1px solid var(--color-primary);
-  background: var(--color-primary);
-  color: var(--color-on-primary);
-  font-size: var(--text-bodysm-size);
-  font-weight: var(--text-bodystrong-weight);
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  font-size: 12px;
+  line-height: 20px;
+  text-align: center;
 }
 
 .interested__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-2);
+}
+
+.interested__none,
+.interested__hint {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-caption-size);
+  text-align: center;
 }

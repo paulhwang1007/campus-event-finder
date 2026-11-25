@@ -14,7 +14,6 @@
   box-shadow: var(--shadow-card);
   font-size: var(--text-bodysm-size);
   line-height: var(--text-bodysm-lh);
-  animation: toast-in 160ms ease-out;
 }
 
 .toast--error {
@@ -32,7 +31,7 @@
   border: none;
   border-radius: var(--radius-sm);
   background: none;
-  color: var(--color-highlight);
+  color: #ff8a8a;
   font-size: var(--text-bodysm-size);
   font-weight: var(--text-bodystrong-weight);
 }
@@ -40,17 +39,4 @@
 .toast--error .toast__action {
   color: var(--color-on-primary);
   text-decoration: underline;
-}
-
-@keyframes toast-in {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .toast {
-    animation: none;
-  }
 }

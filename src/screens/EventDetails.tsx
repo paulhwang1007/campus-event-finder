@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 import { useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { getCategory } from '../data/categories';
@@ -49,10 +50,6 @@ export function EventDetails() {
       <div className="event-details__hero">
         <span className="pill event-details__category-pill">{category.label}</span>
         <h1 className="event-details__title">{event.title}</h1>
-        <div className="event-details__organizer">
-          {event.organizerName}{' '}
-          <span className="pill">{event.organizerType === 'club' ? 'Club' : 'Student'}</span>
-        </div>
         <div className="event-details__stats">
           {event.interestedCount} interested · {event.goingCount} going
           {left != null && (
@@ -65,6 +62,17 @@ export function EventDetails() {
       </div>
 
       <EventFieldList event={event} now={now} />
+
+      <div className="event-details__host">
+        <span className="event-details__host-avatar" aria-hidden="true">
+          {event.organizerName.trim().charAt(0).toUpperCase()}
+        </span>
+        <span className="event-details__host-info">
+          <span className="event-details__host-label">{isHost ? 'Hosted by you' : 'Host'}</span>
+          <span className="event-details__host-name">{event.organizerName}</span>
+        </span>
+        <span className="pill">{event.organizerType === 'club' ? 'Club' : 'Student'}</span>
+      </div>
 
       <div className="event-details__updates">
         <h2 className="event-details__updates-heading">Updates</h2>
@@ -135,7 +143,16 @@ function AttendeeActions({
           if (ok) showToast(isSaved ? 'Removed from Interested' : 'Saved to Interested');
         }}
       >
-        {isSaved ? <IconCheck size={16} /> : <IconBookmark size={16} />} Interested
+        <motion.span
+          key={isSaved ? 'saved' : 'unsaved'}
+          className="event-details__save-icon"
+          initial={{ scale: isSaved ? 0.4 : 1 }}
+          animate={{ scale: isSaved ? [0.4, 1.3, 1] : 1 }}
+          transition={{ duration: 0.35, ease: 'easeOut' }}
+        >
+          <IconBookmark size={16} className={isSaved ? 'event-details__bookmark--filled' : undefined} />
+        </motion.span>
+        {isSaved ? 'Saved' : 'Interested'}
       </button>
       <button
         type="button"

@@ -1,6 +1,7 @@
 import type { Session } from '@supabase/supabase-js';
+import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
-import { Navigate, Outlet, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation, useOutlet } from 'react-router-dom';
 import { BottomNav } from './components/BottomNav';
 import { Toast } from './components/Toast';
 import { supabase, supabaseConfigured } from './lib/supabase';
@@ -14,10 +15,33 @@ import { Profile } from './screens/Profile';
 import { ProfileSetup } from './screens/ProfileSetup';
 import { useAppStore } from './store/useAppStore';
 
+/** Keeps rendering the screen it mounted with, so the old screen can animate out after navigation. */
+function FrozenOutlet() {
+  const outlet = useOutlet();
+  const [frozen] = useState(outlet);
+  return frozen;
+}
+
 function Layout() {
+  const location = useLocation();
+  // Detail screens slide in from the right; tab switches fade up.
+  const isDrillIn = location.pathname.startsWith('/events/') || location.pathname === '/profile/edit';
+  const offset = isDrillIn ? { x: 24, y: 0 } : { x: 0, y: 8 };
+
   return (
     <>
-      <Outlet />
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={location.pathname}
+          className="route"
+          initial={{ opacity: 0, ...offset }}
+          animate={{ opacity: 1, x: 0, y: 0 }}
+          exit={{ opacity: 0, transition: { duration: 0.1 } }}
+          transition={{ duration: 0.2, ease: [0.2, 0.8, 0.2, 1] }}
+        >
+          <FrozenOutlet />
+        </motion.div>
+      </AnimatePresence>
       <Toast />
       <BottomNav />
     </>
@@ -89,18 +113,20 @@ function App() {
   if (!onboarded) return <ProfileSetup mode="onboarding" />;
 
   return (
-    <Routes>
-      <Route element={<Layout />}>
-        <Route path="/feed" element={<Feed />} />
-        <Route path="/create" element={<CreateEvent />} />
-        <Route path="/interested" element={<Interested />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/profile/edit" element={<ProfileSetup mode="edit" />} />
-        <Route path="/events/:id" element={<EventDetails />} />
-        <Route path="/events/:id/confirm" element={<EventConfirm />} />
-        <Route path="*" element={<Navigate to="/feed" replace />} />
-      </Route>
-    </Routes>
+    <MotionConfig reducedMotion="user">
+      <Routes>
+        <Route element={<Layout />}>
+          <Route path="/feed" element={<Feed />} />
+          <Route path="/create" element={<CreateEvent />} />
+          <Route path="/interested" element={<Interested />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/profile/edit" element={<ProfileSetup mode="edit" />} />
+          <Route path="/events/:id" element={<EventDetails />} />
+          <Route path="/events/:id/confirm" element={<EventConfirm />} />
+          <Route path="*" element={<Navigate to="/feed" replace />} />
+        </Route>
+      </Routes>
+    </MotionConfig>
   );
 }
 

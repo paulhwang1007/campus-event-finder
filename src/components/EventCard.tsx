@@ -20,14 +20,11 @@ export function EventCard({ event, isOutsideInterests, now }: Props) {
   return (
     <div className="event-card">
       <div className="event-card__body">
-        <div className="event-card__top">
-          <span className="pill event-card__category-pill">{category.label}</span>
-          {isOutsideInterests && (
-            <span className="pill event-card__new">
-              <IconSparkle /> Something new
-            </span>
-          )}
-        </div>
+        {isOutsideInterests && (
+          <span className="pill event-card__new">
+            <IconSparkle /> Something new
+          </span>
+        )}
 
         <h2 className="event-card__title">{event.title}</h2>
 
@@ -42,17 +39,12 @@ export function EventCard({ event, isOutsideInterests, now }: Props) {
           </span>
         </div>
 
-        <div className="event-card__organizer">
-          {event.organizerName}{' '}
-          <span className="pill">{event.organizerType === 'club' ? 'Club' : 'Student'}</span>
-        </div>
-
         <div className="event-card__image" style={{ background: category.gradient }}>
           <CategoryIcon size={40} className="event-card__image-icon" />
         </div>
 
         <div className="event-card__stats">
-          {event.interestedCount} interested
+          {event.goingCount} going · {event.interestedCount} interested
           {left != null && (
             <>
               {' · '}

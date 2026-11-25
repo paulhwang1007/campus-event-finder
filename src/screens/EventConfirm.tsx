@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { EventNotFound } from '../components/EventNotFound';
-import { IconArrowLeft, IconCalendar, IconCheck, IconMapPin, IconX } from '../components/Icon';
+import { IconArrowLeft, IconCalendar, IconMapPin, IconX } from '../components/Icon';
 import { formatEventTimeParts } from '../lib/time';
 import { isFull, isPast, spotsLeft } from '../store/selectors';
 import { useAppStore } from '../store/useAppStore';
+import { SuccessCheck } from '../components/SuccessCheck';
 import './EventConfirm.css';
 
 export function EventConfirm() {
@@ -33,14 +34,12 @@ export function EventConfirm() {
         >
           <IconX size={18} />
         </button>
-        <span className="event-confirm__success-icon">
-          <IconCheck size={32} />
-        </span>
-        <h1 className="event-confirm__success-heading">You're going!</h1>
-        <p className="event-confirm__success-subtext">Find it anytime under Interested.</p>
-        <button type="button" className="event-confirm__cta event-confirm__cta--inline" onClick={() => navigate('/interested')}>
-          See my events
-        </button>
+        <SuccessCheck title="You're going!">
+          <p className="event-confirm__success-subtext">Find it anytime under Interested.</p>
+          <button type="button" className="btn" onClick={() => navigate('/interested')}>
+            See my events
+          </button>
+        </SuccessCheck>
       </div>
     );
   }
@@ -99,7 +98,7 @@ export function EventConfirm() {
       ) : (
         <button
           type="button"
-          className="event-confirm__cta"
+          className="btn event-confirm__cta"
           disabled={submitting}
           onClick={async () => {
             setSubmitting(true);

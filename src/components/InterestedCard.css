@@ -1,167 +1,71 @@
 .interested-card {
   position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-card);
-  padding: var(--space-4) var(--space-5);
 }
 
-.interested-card__remove {
+/* Red layer revealed behind the row while swiping left. */
+.interested-card__reveal {
   position: absolute;
-  top: var(--space-3);
-  right: var(--space-3);
-  z-index: 1;
-  width: 28px;
-  height: 28px;
+  inset: 0;
   display: flex;
   align-items: center;
-  justify-content: center;
-  border-radius: var(--radius-full);
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
-  color: var(--color-text-muted);
-}
-
-.interested-card__body {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  cursor: pointer;
-  outline: none;
-}
-
-.interested-card__body:focus-visible {
-  box-shadow: 0 0 0 3px var(--color-focus);
+  justify-content: flex-end;
+  padding-right: var(--space-5);
   border-radius: var(--radius-md);
-}
-
-.interested-card__category-pill {
-  align-self: flex-start;
-  font-size: var(--text-caption-size);
-  line-height: var(--text-caption-lh);
-  color: var(--color-text-muted);
-}
-
-.interested-card__title {
-  font-size: var(--text-title2-size);
-  line-height: var(--text-title2-lh);
-  font-weight: var(--text-title2-weight);
-  margin: 0;
-}
-
-.interested-card__meta {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  color: var(--color-text);
-  font-size: var(--text-body-size);
-  line-height: var(--text-body-lh);
-}
-
-.interested-card__meta span {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-}
-
-.interested-card__meta svg {
-  flex: none;
-  color: var(--color-text-muted);
-}
-
-.interested-card__time-label {
-  color: var(--color-primary);
-  font-weight: var(--text-bodystrong-weight);
-}
-
-.interested-card__organizer {
-  color: var(--color-text-muted);
-  font-size: var(--text-bodysm-size);
-  line-height: var(--text-bodysm-lh);
-}
-
-.interested-card__image {
-  height: 140px;
-  flex: none;
-  border-radius: var(--radius-md);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.interested-card__image-icon {
-  color: var(--color-on-primary);
-  opacity: 0.9;
-}
-
-.interested-card__stats {
-  padding-top: var(--space-2);
-  border-top: 1px solid var(--color-border);
-  color: var(--color-text);
-  font-size: var(--text-bodysm-size);
-  line-height: var(--text-bodysm-lh);
-}
-
-.interested-card__spots-left {
-  color: var(--color-primary);
-  font-weight: var(--text-bodystrong-weight);
-}
-
-.interested-card__snippet {
-  margin: 0;
-  color: var(--color-text-muted);
-  font-size: var(--text-bodysm-size);
-  line-height: var(--text-bodysm-lh);
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  overflow: hidden;
-}
-
-.interested-card__cta {
-  width: 100%;
-  padding: var(--space-3);
-  border-radius: var(--radius-full);
-  border: 1px solid var(--color-primary);
   background: var(--color-primary);
   color: var(--color-on-primary);
-  font-size: var(--text-bodystrong-size);
-  font-weight: var(--text-bodystrong-weight);
+  font-size: var(--text-bodysm-size);
+  font-weight: 700;
 }
 
-.interested-card__cta--going {
-  background: var(--color-surface);
+.interested-card__slide {
+  position: relative;
+  cursor: grab;
+}
+
+.interested-card__slide:active {
+  cursor: grabbing;
+}
+
+.interested-card__soon {
   color: var(--color-primary);
+  font-weight: 600;
 }
 
-.interested-card__pills {
-  align-self: flex-start;
-  padding-right: var(--space-5); /* room for the remove button */
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-1);
-}
-
-.interested-card__cancelled-pill {
-  color: var(--color-danger);
-  border-color: var(--color-danger);
-  background: var(--color-primary-soft);
-}
-
-.interested-card__cta {
+/* Small ✕ on the corner: shown on hover or keyboard focus. Touch users swipe instead. */
+.interested-card__remove {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  z-index: 2;
+  width: 22px;
+  height: 22px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--space-1);
+  padding: 0;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-surface);
+  color: var(--color-text);
+  opacity: 0;
+  pointer-events: none; /* still reachable by keyboard and screen readers */
+  transform: scale(0.8);
+  transition:
+    opacity var(--dur-med) var(--ease-out),
+    transform var(--dur-med) var(--ease-out),
+    background-color var(--dur-med) var(--ease-out);
 }
 
-.interested-card__cta:disabled {
-  background: var(--color-disabled);
-  border-color: var(--color-disabled);
-  color: var(--color-text-muted);
-  cursor: not-allowed;
+.interested-card:hover .interested-card__remove,
+.interested-card__remove:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: scale(1);
 }
+
+.interested-card__remove:hover {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-on-primary);
+}
+

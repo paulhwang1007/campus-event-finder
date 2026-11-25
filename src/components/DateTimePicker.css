@@ -15,6 +15,7 @@
   font-size: var(--text-display-size);
   line-height: var(--text-display-lh);
   font-weight: var(--text-display-weight);
+  letter-spacing: var(--text-display-tracking);
   color: var(--color-primary);
   margin: 0;
 }

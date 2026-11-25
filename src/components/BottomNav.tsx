@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 import { NavLink } from 'react-router-dom';
 import { IconBookmark, IconCompass, IconPlus, IconUser } from './Icon';
 import './BottomNav.css';
@@ -18,8 +19,26 @@ export function BottomNav() {
           to={to}
           className={({ isActive }) => `bottom-nav__item${isActive ? ' bottom-nav__item--active' : ''}`}
         >
-          <Icon size={20} />
-          <span>{label}</span>
+          {({ isActive }) => (
+            <>
+              {isActive && (
+                <motion.span
+                  layoutId="bottom-nav-indicator"
+                  className="bottom-nav__indicator"
+                  transition={{ type: 'spring', stiffness: 500, damping: 40 }}
+                />
+              )}
+              <motion.span
+                className="bottom-nav__icon"
+                initial={false}
+                animate={isActive ? { scale: [1, 1.2, 1], y: [0, -2, 0] } : { scale: 1, y: 0 }}
+                transition={{ duration: 0.35, ease: 'easeOut' }}
+              >
+                <Icon size={20} />
+              </motion.span>
+              <span className="bottom-nav__label">{label}</span>
+            </>
+          )}
         </NavLink>
       ))}
     </nav>

@@ -6,7 +6,6 @@ import { DateTimePicker, formatTime } from '../components/DateTimePicker';
 import {
   IconArrowLeft,
   IconCalendar,
-  IconCheck,
   IconChevronRight,
   IconMapPin,
   IconMinus,
@@ -15,6 +14,7 @@ import {
 import { combineDateAndTime, validateEventForm, type EventDraft } from '../lib/validation';
 import { formatDayHeading } from '../lib/time';
 import { useAppStore } from '../store/useAppStore';
+import { SuccessCheck } from '../components/SuccessCheck';
 import './CreateEvent.css';
 
 const EMPTY_DRAFT: EventDraft = {
@@ -119,13 +119,12 @@ export function CreateEvent() {
   if (view === 'success') {
     return (
       <div className="screen create-event__success">
-        <span className="create-event__success-icon">
-          <IconCheck size={32} />
-        </span>
-        <h1 className="create-event__success-heading">Event Posted</h1>
-        <button type="button" className="create-event__submit" onClick={() => navigate(`/events/${postedId}`)}>
-          View event
-        </button>
+        <SuccessCheck title="Event posted">
+          <p className="create-event__success-subtext">It's live on Discover now.</p>
+          <button type="button" className="btn" onClick={() => navigate(`/events/${postedId}`)}>
+            View event
+          </button>
+        </SuccessCheck>
       </div>
     );
   }
@@ -141,7 +140,7 @@ export function CreateEvent() {
         <IconArrowLeft /> Back
       </button>
 
-      <h1 className="create-event__heading">Create event</h1>
+      <h1 className="page-heading">Create event</h1>
 
       <Field label="Event name" error={errors.title} refEl={(el) => (fieldRefs.current.title = el)}>
         <input

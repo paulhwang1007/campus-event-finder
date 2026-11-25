@@ -1,5 +1,5 @@
-import { animate, motion, useMotionValue, useTransform } from 'framer-motion';
-import { useEffect, useRef } from 'react';
+import { animate, motion, useMotionValue, useTransform, type MotionValue } from 'framer-motion';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 import { EventCard } from './EventCard';
 import { IconChevronLeft, IconChevronRight } from './Icon';
 import { isFull, type FeedCard } from '../store/selectors';
@@ -26,6 +26,12 @@ export function SwipeDeck({ cards, now, onSwipe, onOpen, onJoinEvent }: Props) {
   const top = cards[0];
   const next = cards[1];
   const commitRef = useRef<((action: 'save' | 'pass') => void) | null>(null);
+  // Shared with the back card so it grows into place as the top card is dragged away.
+  const x = useMotionValue(0);
+  const dragProgress = useTransform(x, (v) => Math.min(Math.abs(v) / 150, 1));
+  const backScale = useTransform(dragProgress, [0, 1], [0.95, 1]);
+  const backY = useTransform(dragProgress, [0, 1], [12, 0]);
+  const backOpacity = useTransform(dragProgress, [0, 1], [0.55, 1]);
 
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
@@ -43,14 +49,19 @@ export function SwipeDeck({ cards, now, onSwipe, onOpen, onJoinEvent }: Props) {
     <div className="swipe-deck">
       <div className="swipe-deck__stack">
         {next && (
-          <div className="swipe-deck__card swipe-deck__card--back">
+          <motion.div
+            key={next.event.id}
+            className="swipe-deck__card swipe-deck__card--back"
+            style={{ scale: backScale, y: backY, opacity: backOpacity }}
+          >
             <EventCard event={next.event} isOutsideInterests={next.isOutsideInterests} now={now} />
-          </div>
+          </motion.div>
         )}
         <TopCard
           key={top.event.id}
           card={top}
           now={now}
+          x={x}
           onCommit={(action) => onSwipe(top.event.id, action)}
           onOpen={() => onOpen(top.event.id)}
           commitRef={commitRef}
@@ -61,7 +72,7 @@ export function SwipeDeck({ cards, now, onSwipe, onOpen, onJoinEvent }: Props) {
         <button
           type="button"
           aria-label="Pass on this event"
-          className="swipe-deck__chevron swipe-deck__chevron--left"
+          className="no-press swipe-deck__chevron swipe-deck__chevron--left"
           onClick={() => commitRef.current?.('pass')}
         >
           <IconChevronLeft size={18} />
@@ -69,7 +80,7 @@ export function SwipeDeck({ cards, now, onSwipe, onOpen, onJoinEvent }: Props) {
         <button
           type="button"
           aria-label="Mark this event as interested"
-          className="swipe-deck__chevron swipe-deck__chevron--right"
+          className="no-press swipe-deck__chevron swipe-deck__chevron--right"
           onClick={() => commitRef.current?.('save')}
         >
           <IconChevronRight size={18} />
@@ -80,7 +91,7 @@ export function SwipeDeck({ cards, now, onSwipe, onOpen, onJoinEvent }: Props) {
         <p className="swipe-deck__hint">Swipe left to skip or right to save</p>
         <button
           type="button"
-          className="swipe-deck__join"
+          className="btn swipe-deck__join"
           onClick={() => onJoinEvent(top.event)}
           disabled={isFull(top.event)}
         >
@@ -97,13 +108,19 @@ interface TopCardProps {
   onCommit: (action: 'save' | 'pass') => void;
   onOpen: () => void;
   commitRef: React.RefObject<((action: 'save' | 'pass') => void) | null>;
+  x: MotionValue<number>;
 }
 
-function TopCard({ card, now, onCommit, onOpen, commitRef }: TopCardProps) {
-  const x = useMotionValue(0);
+function TopCard({ card, now, onCommit, onOpen, commitRef, x }: TopCardProps) {
+  // Each new top card starts centered (the previous one left x off-screen).
+  useLayoutEffect(() => {
+    x.set(0);
+  }, [x]);
   const rotate = useTransform(x, [-200, 200], [-10, 10]);
   const saveOpacity = useTransform(x, [20, 120], [0, 1]);
   const passOpacity = useTransform(x, [-120, -20], [1, 0]);
+  const saveScale = useTransform(x, [20, 120], [0.6, 1]);
+  const passScale = useTransform(x, [-120, -20], [1, 0.6]);
   const committed = useRef(false);
 
   function commit(action: 'save' | 'pass') {
@@ -133,6 +150,9 @@ function TopCard({ card, now, onCommit, onOpen, commitRef }: TopCardProps) {
       drag="x"
       dragConstraints={{ left: 0, right: 0 }}
       dragElastic={1}
+      whileDrag={{ cursor: 'grabbing' }}
+      initial={{ scale: 0.98 }}
+      animate={{ scale: 1 }}
       onDragEnd={handleDragEnd}
       onTap={onOpen}
       role="button"
@@ -142,10 +162,10 @@ function TopCard({ card, now, onCommit, onOpen, commitRef }: TopCardProps) {
         if (e.key === 'Enter') onOpen();
       }}
     >
-      <motion.span className="swipe-deck__label swipe-deck__label--save" style={{ opacity: saveOpacity }}>
+      <motion.span className="swipe-deck__label swipe-deck__label--save" style={{ opacity: saveOpacity, scale: saveScale, rotate: -8 }}>
         INTERESTED
       </motion.span>
-      <motion.span className="swipe-deck__label swipe-deck__label--pass" style={{ opacity: passOpacity }}>
+      <motion.span className="swipe-deck__label swipe-deck__label--pass" style={{ opacity: passOpacity, scale: passScale, rotate: 8 }}>
         PASS
       </motion.span>
       <EventCard event={card.event} isOutsideInterests={card.isOutsideInterests} now={now} />

@@ -27,8 +27,8 @@ export function Feed() {
   );
 
   return (
-    <div className="screen">
-      <h1 className="feed__heading">Discover Events</h1>
+    <div className="screen screen--main">
+      <h1 className="page-heading">Discover<br />Events</h1>
       <CategoryChips value={category} onChange={setCategory} />
 
       {cards.length > 0 ? (
