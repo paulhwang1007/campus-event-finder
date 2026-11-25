@@ -32,11 +32,13 @@ export function Feed() {
 
   return (
     <div className="screen screen--main">
-      <h1 className="page-heading">Discover<br />Events</h1>
-      <ViewToggle
-        value={view}
-        onChange={(next) => setParams(next === 'list' ? { view: 'list' } : {}, { replace: true })}
-      />
+      <div className="feed__header">
+        <h1 className="page-heading">Discover<br />Events</h1>
+        <ViewToggle
+          value={view}
+          onChange={(next) => setParams(next === 'list' ? { view: 'list' } : {}, { replace: true })}
+        />
+      </div>
 
       <AnimatePresence mode="wait" initial={false}>
         <motion.div
