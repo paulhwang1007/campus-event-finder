@@ -123,10 +123,14 @@ function TopCard({ card, now, onCommit, onOpen, commitRef, x }: TopCardProps) {
     x.set(0);
   }, [x]);
   const rotate = useTransform(x, [-200, 200], [-10, 10]);
-  const saveOpacity = useTransform(x, [20, 120], [0, 1]);
-  const passOpacity = useTransform(x, [-120, -20], [1, 0]);
-  const saveScale = useTransform(x, [20, 120], [0.6, 1]);
-  const passScale = useTransform(x, [-120, -20], [1, 0.6]);
+  // Labels reach full strength at the commit threshold, so "fully shown" means "let go to swipe".
+  const saveOpacity = useTransform(x, [15, SWIPE_OFFSET_THRESHOLD], [0, 1]);
+  const passOpacity = useTransform(x, [-SWIPE_OFFSET_THRESHOLD, -15], [1, 0]);
+  const saveScale = useTransform(x, [15, SWIPE_OFFSET_THRESHOLD], [0.7, 1]);
+  const passScale = useTransform(x, [-SWIPE_OFFSET_THRESHOLD, -15], [1, 0.7]);
+  // A light wash over the whole card, so the direction reads even while the label is small.
+  const saveTint = useTransform(x, [0, SWIPE_OFFSET_THRESHOLD], [0, 0.16]);
+  const passTint = useTransform(x, [-SWIPE_OFFSET_THRESHOLD, 0], [0.16, 0]);
   const committed = useRef(false);
   const pointerStart = useRef<{ x: number; y: number; time: number } | null>(null);
   const dragged = useRef(false);
@@ -190,6 +194,8 @@ function TopCard({ card, now, onCommit, onOpen, commitRef, x }: TopCardProps) {
         if (e.key === 'Enter') onOpen();
       }}
     >
+      <motion.span className="swipe-deck__tint swipe-deck__tint--save" style={{ opacity: saveTint }} />
+      <motion.span className="swipe-deck__tint swipe-deck__tint--pass" style={{ opacity: passTint }} />
       <motion.span className="swipe-deck__label swipe-deck__label--save" style={{ opacity: saveOpacity, scale: saveScale, rotate: -8 }}>
         INTERESTED
       </motion.span>

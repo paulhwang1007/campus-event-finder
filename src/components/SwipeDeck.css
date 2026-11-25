@@ -51,16 +51,34 @@
   pointer-events: none;
 }
 
+/* Each label sits on the edge that stays on screen: a right swipe moves the card right,
+   so INTERESTED goes on the left (trailing) edge, and PASS on the right. */
 .swipe-deck__label--save {
-  right: var(--space-5);
-  color: var(--color-primary);
+  left: var(--space-5);
+  color: var(--color-accent-4); /* green */
   background: var(--color-surface);
 }
 
 .swipe-deck__label--pass {
-  left: var(--space-5);
-  color: var(--color-neutral);
+  right: var(--space-5);
+  color: var(--color-primary); /* Cornell red */
   background: var(--color-surface);
+}
+
+.swipe-deck__tint {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: var(--radius-lg);
+  pointer-events: none;
+}
+
+.swipe-deck__tint--save {
+  background: var(--color-accent-4);
+}
+
+.swipe-deck__tint--pass {
+  background: var(--color-primary);
 }
 
 .swipe-deck__chevron {
