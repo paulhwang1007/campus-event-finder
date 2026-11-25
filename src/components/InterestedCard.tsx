@@ -38,24 +38,51 @@ export function InterestedCard({ event, now, isGoing, hasUpdate, onOpen, onJoin,
     animate(x, -480, { duration: 0.2, ease: 'easeIn' }).then(onRemove);
   }
 
-  const subtitle = (
-    <>
-      {isSoon ? <span className="interested-card__soon">{time.label}</span> : time.label}
-      {time.range && ` · ${time.range}`}
-    </>
+  const day = (
+    <span key="day" className={isSoon ? 'interested-card__soon' : undefined}>
+      {time.label}
+    </span>
   );
 
-  let status;
+  // Your status first, then urgency; fall back to turnout when there's nothing urgent.
+  const statusParts: React.ReactNode[] = [];
   if (isGoing) {
-    status = (
-      <span className="event-row__tone-going">
+    statusParts.push(
+      <span key="going" className="event-row__tone-going">
         <IconCheck size={12} /> Going
-      </span>
+      </span>,
     );
-  } else if (full) {
-    status = <span className="event-row__tone-danger">Full</span>;
   }
-  const spotsText = left != null && left > 0 && left <= 5 ? `${left} spots left` : null;
+  if (full) {
+    statusParts.push(
+      <span key="full" className="event-row__tone-danger">
+        Full
+      </span>,
+    );
+  } else if (left != null && left <= 5) {
+    statusParts.push(
+      <span key="spots" className="event-row__tone-urgent">
+        {left} spots left
+      </span>,
+    );
+  }
+  if (statusParts.length === 0) statusParts.push(<span key="count">{event.goingCount} going</span>);
+
+  // Line 2: day + status. Line 3: time + place.
+  const dayAndStatus = [day, ...statusParts].flatMap((part, i) =>
+    i === 0 ? [part] : [<span key={`sep-${i}`} aria-hidden="true">·</span>, part],
+  );
+  const timeAndPlace = (
+    <>
+      {time.range && (
+        <>
+          <span className="interested-card__time">{time.range}</span>
+          <span aria-hidden="true">·</span>
+        </>
+      )}
+      <span className="interested-card__location">{event.locationName}</span>
+    </>
+  );
 
   return (
     <div className="interested-card">
@@ -88,22 +115,8 @@ export function InterestedCard({ event, now, isGoing, hasUpdate, onOpen, onJoin,
         <EventRow
           start={new Date(event.start)}
           title={event.title}
-          subtitle={
-            <>
-              {subtitle} · {event.locationName}
-            </>
-          }
-          status={
-            status || spotsText ? (
-              <>
-                {status}
-                {status && spotsText && <span aria-hidden="true">·</span>}
-                {spotsText && <span className="event-row__tone-urgent">{spotsText}</span>}
-              </>
-            ) : (
-              `${event.goingCount} going`
-            )
-          }
+          subtitle={<span className="interested-card__line">{dayAndStatus}</span>}
+          status={timeAndPlace}
           highlight={isSoon}
           badge={hasUpdate}
           onOpen={onOpen}

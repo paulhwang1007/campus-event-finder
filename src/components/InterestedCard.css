@@ -69,3 +69,27 @@
   color: var(--color-on-primary);
 }
 
+
+/* Location shares the status line; it gives way (with an ellipsis) before the status does. */
+.interested-card__location {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.interested-card .event-row__status {
+  font-weight: 500;
+}
+
+.interested-card__line {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+}
+
+.interested-card__line > *,
+.interested-card__time {
+  flex: none;
+}
