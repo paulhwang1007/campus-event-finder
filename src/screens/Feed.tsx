@@ -31,7 +31,7 @@ export function Feed() {
   );
 
   return (
-    <div className="screen screen--main">
+    <div className={`screen screen--main${view === 'swipe' ? ' screen--fixed' : ''}`}>
       <div className="feed__header">
         <h1 className="page-heading">Discover<br />Events</h1>
         <ViewToggle

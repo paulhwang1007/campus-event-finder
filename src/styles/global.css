@@ -12,6 +12,8 @@ body {
   font-size: var(--text-body-size);
   line-height: var(--text-body-lh);
   -webkit-font-smoothing: antialiased;
+  /* No whole-page rubber band or pull-to-refresh: each screen scrolls on its own. */
+  overscroll-behavior: none;
 }
 
 #root {
@@ -69,11 +71,26 @@ a {
   padding-top: var(--screen-pad-top);
   gap: var(--space-4);
   overflow-y: auto;
+  /* A card dragged or flying past the edge must not make the screen scroll sideways. */
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+}
+
+/* For screens that fit the viewport and must never move, like the swipe deck. */
+.screen--fixed {
+  overflow: hidden;
 }
 
 /* Main tab screens leave more air above the page heading, as in the Figma. */
 .screen--main {
   --screen-pad-top: 56px;
+}
+
+/* Short phones (iPhone SE / mini): less air above the heading so the swipe deck fits. */
+@media (max-height: 700px) {
+  .screen--main {
+    --screen-pad-top: var(--space-5);
+  }
 }
 
 /* Red display heading at the top of each main screen. */

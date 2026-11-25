@@ -9,7 +9,8 @@
 .swipe-deck__stack {
   position: relative;
   flex: 1;
-  min-height: 380px;
+  /* The swipe view doesn't scroll, so on short phones the card shrinks rather than pushing Join off screen. */
+  min-height: 280px;
 }
 
 .swipe-deck__card {
@@ -22,7 +23,13 @@
 }
 
 .swipe-deck__card--top {
-  touch-action: none;
+  /* framer-motion's drag="x" sets an inline touch-action: pan-y, which lets the browser scroll
+     the page vertically mid-swipe. !important beats that inline value, so every touch on the
+     card goes to the swipe. */
+  touch-action: none !important;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
   cursor: grab;
   outline: none;
 }
