@@ -1,4 +1,15 @@
-import type { CampusEvent, CategoryId, ClassYear, NewEventInput, OrganizerType, ProfileInput, User } from '../types';
+import type {
+  CampusEvent,
+  CategoryId,
+  ClassYear,
+  EventUpdate,
+  NewEventInput,
+  NewUpdateInput,
+  OrganizerType,
+  ProfileInput,
+  ReportReason,
+  User,
+} from '../types';
 import { supabase } from './supabase';
 
 export type ResponseStatus = 'interested' | 'passed' | 'going';
@@ -20,6 +31,7 @@ interface EventRow {
   participation: string | null;
   cancelled: boolean;
   created_at: string;
+  photo_path: string | null;
   interested_count?: number;
   going_count?: number;
 }
@@ -35,7 +47,26 @@ interface ProfileRow {
   onboarded_at: string | null;
 }
 
-function toEvent(row: EventRow): CampusEvent {
+interface UpdateRow {
+  id: string;
+  event_id: string;
+  type: EventUpdate['type'];
+  message: string;
+  created_at: string;
+}
+
+const PHOTO_BUCKET = 'event-photos';
+
+function photoUrl(path: string | null): string | undefined {
+  if (!path) return undefined;
+  return supabase.storage.from(PHOTO_BUCKET).getPublicUrl(path).data.publicUrl;
+}
+
+function toUpdate(row: UpdateRow): EventUpdate {
+  return { id: row.id, type: row.type, message: row.message, createdAt: row.created_at };
+}
+
+function toEvent(row: EventRow, updates: EventUpdate[] = []): CampusEvent {
   return {
     id: row.id,
     title: row.title,
@@ -53,7 +84,8 @@ function toEvent(row: EventRow): CampusEvent {
     goingCount: row.going_count ?? 0,
     accessibility: row.accessibility ?? undefined,
     participation: row.participation ?? undefined,
-    updates: [],
+    updates,
+    photoUrl: photoUrl(row.photo_path),
     cancelled: row.cancelled,
     createdAt: row.created_at,
   };
@@ -87,12 +119,93 @@ export async function fetchProfile(): Promise<User> {
 }
 
 export async function fetchEvents(): Promise<CampusEvent[]> {
-  const { data, error } = await supabase
-    .from('events_with_counts')
-    .select('*')
-    .order('start_at', { ascending: true });
+  const [events, updates] = await Promise.all([
+    supabase.from('events_with_counts').select('*').order('start_at', { ascending: true }),
+    supabase.from('event_updates').select('*').order('created_at', { ascending: true }),
+  ]);
+  if (events.error) throw events.error;
+  if (updates.error) throw updates.error;
+
+  // Oldest first, so the last entry is the latest (see markUpdatesSeen / hasUnreadUpdate).
+  const byEvent = new Map<string, EventUpdate[]>();
+  for (const row of updates.data as UpdateRow[]) {
+    const list = byEvent.get(row.event_id) ?? [];
+    list.push(toUpdate(row));
+    byEvent.set(row.event_id, list);
+  }
+  return (events.data as EventRow[]).map((row) => toEvent(row, byEvent.get(row.id)));
+}
+
+export async function fetchMyReportedIds(): Promise<string[]> {
+  const userId = await currentUserId();
+  const { data, error } = await supabase.from('event_reports').select('event_id').eq('reporter_id', userId);
   if (error) throw error;
-  return (data as EventRow[]).map(toEvent);
+  return data.map((r) => r.event_id as string);
+}
+
+export async function reportEvent(eventId: string, reason: ReportReason, note?: string): Promise<void> {
+  const userId = await currentUserId();
+  const { error } = await supabase
+    .from('event_reports')
+    .upsert(
+      { reporter_id: userId, event_id: eventId, reason, note: note?.trim() || null },
+      { onConflict: 'reporter_id,event_id' },
+    );
+  if (error) throw error;
+}
+
+export async function postEventUpdate(eventId: string, input: NewUpdateInput): Promise<EventUpdate> {
+  const { data, error } = await supabase
+    .rpc('post_event_update', {
+      p_event_id: eventId,
+      p_type: input.type,
+      p_message: input.message,
+      p_start_at: input.type === 'time' ? input.start : null,
+      p_end_at: input.type === 'time' ? input.end : null,
+      p_location_name: input.type === 'location' ? input.locationName : null,
+    })
+    .single();
+  if (error) throw error;
+  return toUpdate(data as UpdateRow);
+}
+
+/** Uploads a (already resized) photo into the user's folder and returns its storage path. */
+export async function uploadEventPhoto(photo: Blob): Promise<string> {
+  const userId = await currentUserId();
+  const path = `${userId}/${crypto.randomUUID()}.jpg`;
+  const { error } = await supabase.storage
+    .from(PHOTO_BUCKET)
+    .upload(path, photo, { contentType: 'image/jpeg', cacheControl: '31536000' });
+  if (error) throw error;
+  return path;
+}
+
+export async function deleteEventPhoto(path: string): Promise<void> {
+  await supabase.storage.from(PHOTO_BUCKET).remove([path]);
+}
+
+/**
+ * Demo reset for usability tests: clears this user's swipes, RSVPs and reports, and deletes
+ * the events they posted (with their photos), so the next participant starts from the seed state.
+ */
+export async function resetDemo(): Promise<void> {
+  const userId = await currentUserId();
+  const { data: mine, error: listError } = await supabase
+    .from('events')
+    .select('photo_path')
+    .eq('organizer_id', userId);
+  if (listError) throw listError;
+
+  const results = await Promise.all([
+    supabase.from('event_responses').delete().eq('user_id', userId),
+    supabase.from('event_reports').delete().eq('reporter_id', userId),
+    supabase.from('events').delete().eq('organizer_id', userId),
+  ]);
+  const failed = results.find((r) => r.error);
+  if (failed?.error) throw failed.error;
+
+  const photos = mine.map((e) => e.photo_path as string | null).filter((p): p is string => !!p);
+  if (photos.length > 0) await supabase.storage.from(PHOTO_BUCKET).remove(photos);
 }
 
 export async function fetchMyResponses(): Promise<{ eventId: string; status: ResponseStatus }[]> {
@@ -149,6 +262,7 @@ export async function createEvent(input: NewEventInput): Promise<CampusEvent> {
       end_at: input.end,
       location_name: input.locationName,
       capacity: input.capacity ?? null,
+      photo_path: input.photoPath ?? null,
     })
     .select('*')
     .single();

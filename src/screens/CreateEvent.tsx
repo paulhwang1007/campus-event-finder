@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { categories } from '../data/categories';
 import { DateTimePicker, formatTime } from '../components/DateTimePicker';
@@ -10,7 +10,10 @@ import {
   IconMapPin,
   IconMinus,
   IconPlus,
+  IconCamera,
+  IconX,
 } from '../components/Icon';
+import { preparePhoto } from '../lib/image';
 import { combineDateAndTime, validateEventForm, type EventDraft } from '../lib/validation';
 import { formatDayHeading } from '../lib/time';
 import { useAppStore } from '../store/useAppStore';
@@ -54,13 +57,46 @@ export function CreateEvent() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const fieldRefs = useRef<Record<string, HTMLElement | null>>({});
+  const [photo, setPhoto] = useState<Blob | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoError, setPhotoError] = useState<string | null>(null);
+  const [preparingPhoto, setPreparingPhoto] = useState(false);
+  const photoInputRef = useRef<HTMLInputElement>(null);
+
+  // Free the preview's object URL when it changes or the form unmounts.
+  useEffect(() => {
+    return () => {
+      if (photoPreview) URL.revokeObjectURL(photoPreview);
+    };
+  }, [photoPreview]);
+
+  async function handlePhoto(file: File | undefined) {
+    if (!file) return;
+    setPhotoError(null);
+    setPreparingPhoto(true);
+    try {
+      const prepared = await preparePhoto(file);
+      setPhoto(prepared);
+      setPhotoPreview(URL.createObjectURL(prepared));
+    } catch (err) {
+      setPhotoError(err instanceof Error ? err.message : "Couldn't use that photo.");
+    } finally {
+      setPreparingPhoto(false);
+      if (photoInputRef.current) photoInputRef.current.value = '';
+    }
+  }
+
+  function removePhoto() {
+    setPhoto(null);
+    setPhotoPreview(null);
+  }
 
   function update<K extends keyof EventDraft>(key: K, value: EventDraft[K]) {
     setDraft((d) => ({ ...d, [key]: value }));
   }
 
   function handleBack() {
-    if (isDraftTouched(draft) && !window.confirm('Discard this event?')) return;
+    if ((isDraftTouched(draft) || photo) && !window.confirm('Discard this event?')) return;
     navigate(-1);
   }
 
@@ -90,7 +126,7 @@ export function CreateEvent() {
         end: end.toISOString(),
         locationName: draft.locationName.trim(),
         capacity: draft.capacityMode === 'limited' ? Number(draft.capacityValue) : undefined,
-      });
+      }, photo);
       setPostedId(newId);
       setView('success');
     } catch (err) {
@@ -185,6 +221,36 @@ export function CreateEvent() {
             onChange={(e) => update('locationName', e.target.value)}
           />
         </div>
+      </Field>
+
+      <Field label="Photo (optional)" error={photoError ?? undefined}>
+        <input
+          ref={photoInputRef}
+          type="file"
+          accept="image/*"
+          className="create-event__photo-input"
+          id="create-event-photo"
+          onChange={(e) => void handlePhoto(e.target.files?.[0])}
+        />
+        {photoPreview ? (
+          <div className="create-event__photo-preview">
+            <img src={photoPreview} alt="Selected event photo" />
+            <div className="create-event__photo-actions">
+              <label htmlFor="create-event-photo" className="create-event__photo-change">
+                Change
+              </label>
+              <button type="button" className="create-event__photo-remove" aria-label="Remove photo" onClick={removePhoto}>
+                <IconX size={14} />
+              </button>
+            </div>
+          </div>
+        ) : (
+          <label htmlFor="create-event-photo" className="create-event__photo-drop">
+            <IconCamera size={22} />
+            <span>{preparingPhoto ? 'Preparing photo…' : 'Add a photo'}</span>
+            <span className="create-event__photo-hint">Events with photos get noticed more</span>
+          </label>
+        )}
       </Field>
 
       <Field label="Spots" error={errors.capacity} refEl={(el) => (fieldRefs.current.capacity = el)}>

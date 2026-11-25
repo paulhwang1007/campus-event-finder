@@ -1,9 +1,12 @@
 import { motion } from 'framer-motion';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { getCategory } from '../data/categories';
 import { EventFieldList } from '../components/EventFieldList';
+import { EventImage } from '../components/EventImage';
 import { EventNotFound } from '../components/EventNotFound';
+import { PostUpdateSheet } from '../components/PostUpdateSheet';
+import { ReportSheet } from '../components/ReportSheet';
 import { IconArrowLeft, IconBookmark, IconCheck } from '../components/Icon';
 import { UpdateList } from '../components/UpdateList';
 import { isFull, isPast, spotsLeft } from '../store/selectors';
@@ -31,7 +34,6 @@ export function EventDetails() {
   if (!event) return <EventNotFound />;
 
   const category = getCategory(event.category);
-  const CategoryIcon = category.icon;
   const left = spotsLeft(event);
   const isHost = user != null && event.organizerNetId === user.netId;
 
@@ -43,9 +45,7 @@ export function EventDetails() {
 
       {event.cancelled && <div className="event-details__cancelled">This event was cancelled.</div>}
 
-      <div className="event-details__banner" style={{ background: category.gradient }}>
-        <CategoryIcon size={48} className="event-details__banner-icon" />
-      </div>
+      <EventImage event={event} className="event-details__banner" iconSize={48} />
 
       <div className="event-details__hero">
         <span className="pill event-details__category-pill">{category.label}</span>
@@ -79,8 +79,10 @@ export function EventDetails() {
         <UpdateList updates={event.updates} />
       </div>
 
+      {!isHost && <ReportLink event={event} />}
+
       {isHost ? (
-        <HostActions event={event} />
+        <HostActions event={event} isOver={isPast(event, now)} />
       ) : (
         <AttendeeActions
           event={event}
@@ -166,14 +168,25 @@ function AttendeeActions({
   );
 }
 
-function HostActions({ event }: { event: CampusEvent }) {
+function HostActions({ event, isOver }: { event: CampusEvent; isOver: boolean }) {
   const cancelEvent = useAppStore((s) => s.cancelEvent);
   const showToast = useAppStore((s) => s.showToast);
+  const [updating, setUpdating] = useState(false);
+
+  if (event.cancelled || isOver) {
+    return (
+      <div className="event-details__actions">
+        <span className="event-details__status">
+          {event.cancelled ? 'You cancelled this event' : 'This event has ended'}
+        </span>
+      </div>
+    );
+  }
 
   return (
-    <div className="event-details__actions">
+    <div className="event-details__host-actions">
       <span className="event-details__status">You're hosting</span>
-      {!event.cancelled && (
+      <div className="event-details__actions">
         <button
           type="button"
           className="event-details__btn event-details__btn--danger"
@@ -184,7 +197,34 @@ function HostActions({ event }: { event: CampusEvent }) {
         >
           Cancel event
         </button>
-      )}
+        <button type="button" className="event-details__btn" onClick={() => setUpdating(true)}>
+          Post update
+        </button>
+      </div>
+      <PostUpdateSheet event={event} open={updating} onClose={() => setUpdating(false)} />
     </div>
+  );
+}
+
+function ReportLink({ event }: { event: CampusEvent }) {
+  const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button type="button" className="event-details__report" onClick={() => setOpen(true)}>
+        Report this event
+      </button>
+      <ReportSheet
+        event={event}
+        open={open}
+        onClose={() => setOpen(false)}
+        onReported={() => {
+          // Leave the hidden event: go back if we came from inside the app, otherwise to Discover.
+          const idx = (window.history.state as { idx?: number } | null)?.idx ?? 0;
+          if (idx > 0) navigate(-1);
+          else navigate('/feed', { replace: true });
+        }}
+      />
+    </>
   );
 }

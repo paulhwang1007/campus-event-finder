@@ -1,12 +1,12 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import * as api from '../lib/api';
-import type { CampusEvent, NewEventInput, ProfileInput, User } from '../types';
+import type { CampusEvent, NewEventInput, NewUpdateInput, ProfileInput, ReportReason, User } from '../types';
 
 type LoadStatus = 'idle' | 'loading' | 'ready' | 'error';
 
 /** Server-backed fields that an optimistic update may need to roll back. */
-type Snapshot = Pick<AppState, 'events' | 'savedIds' | 'passedIds' | 'confirmedIds'>;
+type Snapshot = Pick<AppState, 'events' | 'savedIds' | 'passedIds' | 'confirmedIds' | 'reportedIds'>;
 
 export interface Toast {
   id: number;
@@ -24,9 +24,9 @@ interface AppState {
   savedIds: string[]; // 'interested' or 'going'
   passedIds: string[];
   confirmedIds: string[]; // 'going'
-  toast: Toast | null;
-  // Local-only (not stored on the server yet):
   reportedIds: string[];
+  toast: Toast | null;
+  // Local-only (kept on this device):
   lastSeenUpdateAt: Record<string, string>;
 
   load: () => Promise<void>;
@@ -41,8 +41,12 @@ interface AppState {
   resetPassed: () => void;
   markUpdatesSeen: (eventId: string) => void;
 
-  createEvent: (input: NewEventInput) => Promise<string>;
+  /** Uploads the photo first (if any), then creates the event. Resolves to the new event's id. */
+  createEvent: (input: NewEventInput, photo?: Blob | null) => Promise<string>;
   cancelEvent: (eventId: string) => Promise<boolean>;
+  postUpdate: (eventId: string, input: NewUpdateInput) => Promise<boolean>;
+  reportEvent: (eventId: string, reason: ReportReason, note?: string) => Promise<boolean>;
+  resetDemo: () => Promise<boolean>;
   updateProfile: (input: ProfileInput) => Promise<void>;
 
   showToast: (message: string, options?: { tone?: Toast['tone']; action?: Toast['action'] }) => void;
@@ -82,6 +86,7 @@ const EMPTY_SERVER_STATE = {
   savedIds: [],
   passedIds: [],
   confirmedIds: [],
+  reportedIds: [],
   lastLoadedAt: null,
 };
 
@@ -95,8 +100,8 @@ export const useAppStore = create<AppState>()(
        * change and show an error toast. Resolves to whether the save succeeded.
        */
       async function optimistic(patch: Partial<Snapshot>, request: () => Promise<void>): Promise<boolean> {
-        const { events, savedIds, passedIds, confirmedIds } = get();
-        const before: Snapshot = { events, savedIds, passedIds, confirmedIds };
+        const { events, savedIds, passedIds, confirmedIds, reportedIds } = get();
+        const before: Snapshot = { events, savedIds, passedIds, confirmedIds, reportedIds };
         set(patch);
         try {
           await request();
@@ -110,10 +115,11 @@ export const useAppStore = create<AppState>()(
       }
 
       async function fetchAll() {
-        const [user, events, responses] = await Promise.all([
+        const [user, events, responses, reportedIds] = await Promise.all([
           api.fetchProfile(),
           api.fetchEvents(),
           api.fetchMyResponses(),
+          api.fetchMyReportedIds(),
         ]);
         return {
           user,
@@ -121,6 +127,7 @@ export const useAppStore = create<AppState>()(
           savedIds: responses.filter((r) => r.status !== 'passed').map((r) => r.eventId),
           passedIds: responses.filter((r) => r.status === 'passed').map((r) => r.eventId),
           confirmedIds: responses.filter((r) => r.status === 'going').map((r) => r.eventId),
+          reportedIds,
           lastLoadedAt: Date.now(),
         };
       }
@@ -130,7 +137,6 @@ export const useAppStore = create<AppState>()(
         error: null,
         ...EMPTY_SERVER_STATE,
         toast: null,
-        reportedIds: [],
         lastSeenUpdateAt: {},
 
         load: async () => {
@@ -258,10 +264,17 @@ export const useAppStore = create<AppState>()(
           });
         },
 
-        createEvent: async (input) => {
-          const event = await api.createEvent(input);
-          set({ events: [...get().events, event] });
-          return event.id;
+        createEvent: async (input, photo) => {
+          const photoPath = photo ? await api.uploadEventPhoto(photo) : undefined;
+          try {
+            const event = await api.createEvent({ ...input, photoPath });
+            set({ events: [...get().events, event] });
+            return event.id;
+          } catch (err) {
+            // Don't leave an orphaned photo behind if the event itself failed to save.
+            if (photoPath) void api.deleteEventPhoto(photoPath).catch(() => {});
+            throw err;
+          }
         },
 
         cancelEvent: async (eventId) => {
@@ -270,6 +283,54 @@ export const useAppStore = create<AppState>()(
             { events: events.map((e) => (e.id === eventId ? { ...e, cancelled: true } : e)) },
             () => api.cancelEvent(eventId),
           );
+        },
+
+        postUpdate: async (eventId, input) => {
+          try {
+            const update = await api.postEventUpdate(eventId, input);
+            const { events, lastSeenUpdateAt } = get();
+            set({
+              events: events.map((e) => {
+                if (e.id !== eventId) return e;
+                const changed =
+                  input.type === 'time'
+                    ? { start: input.start, end: input.end }
+                    : input.type === 'location'
+                      ? { locationName: input.locationName }
+                      : {};
+                return { ...e, ...changed, updates: [...e.updates, update] };
+              }),
+              // The host wrote it, so it isn't "new" to them.
+              lastSeenUpdateAt: { ...lastSeenUpdateAt, [eventId]: update.createdAt },
+            });
+            return true;
+          } catch (err) {
+            console.error('Failed to post update', err);
+            get().showToast(friendlyError(err), { tone: 'error' });
+            return false;
+          }
+        },
+
+        reportEvent: (eventId, reason, note) => {
+          const { reportedIds } = get();
+          if (reportedIds.includes(eventId)) return Promise.resolve(true);
+          return optimistic({ reportedIds: [...reportedIds, eventId] }, () =>
+            api.reportEvent(eventId, reason, note),
+          );
+        },
+
+        resetDemo: async () => {
+          try {
+            await api.resetDemo();
+          } catch (err) {
+            console.error('Demo reset failed', err);
+            get().showToast(friendlyError(err), { tone: 'error' });
+            return false;
+          }
+          set({ lastSeenUpdateAt: {} });
+          await get().load();
+          get().showToast('Demo reset. Everything is back to the starting state.');
+          return true;
         },
 
         updateProfile: async (input) => {
@@ -286,9 +347,13 @@ export const useAppStore = create<AppState>()(
     },
     {
       name: 'campus-events-local-v2',
-      version: 2,
+      version: 3,
+      // Reports moved to the server in v3; only "seen updates" stay on this device.
+      migrate: (persisted) => ({
+        lastSeenUpdateAt: (persisted as { lastSeenUpdateAt?: Record<string, string> })?.lastSeenUpdateAt ?? {},
+      }),
       // Everything else comes from the server on each load.
-      partialize: (s) => ({ reportedIds: s.reportedIds, lastSeenUpdateAt: s.lastSeenUpdateAt }),
+      partialize: (s) => ({ lastSeenUpdateAt: s.lastSeenUpdateAt }),
     },
   ),
 );

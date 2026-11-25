@@ -58,6 +58,8 @@ export interface CampusEvent {
   accessibility?: string;
   participation?: string;
   updates: EventUpdate[];
+  /** Public URL of the event photo, if it has one. */
+  photoUrl?: string;
   cancelled: boolean;
   createdAt: string;
 }
@@ -72,7 +74,15 @@ export interface NewEventInput {
   end: string;
   locationName: string;
   capacity?: number;
+  /** Storage path returned by uploadEventPhoto. */
+  photoPath?: string;
 }
+
+/** What a host submits from "Post update". Time and location changes also change the event. */
+export type NewUpdateInput =
+  | { type: 'time'; message: string; start: string; end: string }
+  | { type: 'location'; message: string; locationName: string }
+  | { type: 'note'; message: string };
 
 export interface ProfileInput {
   name: string;

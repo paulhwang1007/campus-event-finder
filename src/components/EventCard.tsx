@@ -1,4 +1,4 @@
-import { getCategory } from '../data/categories';
+import { EventImage } from './EventImage';
 import { IconCalendar, IconMapPin, IconSparkle } from './Icon';
 import { formatEventTimeParts } from '../lib/time';
 import { spotsLeft } from '../store/selectors';
@@ -12,9 +12,7 @@ interface Props {
 }
 
 export function EventCard({ event, isOutsideInterests, now }: Props) {
-  const category = getCategory(event.category);
   const left = spotsLeft(event);
-  const CategoryIcon = category.icon;
   const time = formatEventTimeParts(event, now);
 
   return (
@@ -39,9 +37,7 @@ export function EventCard({ event, isOutsideInterests, now }: Props) {
           </span>
         </div>
 
-        <div className="event-card__image" style={{ background: category.gradient }}>
-          <CategoryIcon size={40} className="event-card__image-icon" />
-        </div>
+        <EventImage event={event} className="event-card__image" />
 
         <div className="event-card__stats">
           {event.goingCount} going · {event.interestedCount} interested

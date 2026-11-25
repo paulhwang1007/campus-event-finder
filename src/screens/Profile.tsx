@@ -32,7 +32,9 @@ export function Profile() {
   const events = useAppStore((s) => s.events);
   const confirmedIds = useAppStore((s) => s.confirmedIds);
   const reportedIds = useAppStore((s) => s.reportedIds);
+  const resetDemo = useAppStore((s) => s.resetDemo);
   const [tab, setTab] = useState<Tab>('going');
+  const [resetting, setResetting] = useState(false);
 
   const now = useMemo(() => new Date(), [events, confirmedIds, reportedIds]);
   const lists = useMemo(
@@ -129,6 +131,25 @@ export function Profile() {
         <div className="profile__account-list">
           <button type="button" className="profile__account-item" onClick={() => navigate('/profile/edit')}>
             Edit profile <IconChevronRight size={16} />
+          </button>
+          <button
+            type="button"
+            className="profile__account-item"
+            disabled={resetting}
+            onClick={async () => {
+              const ok = window.confirm(
+                'Reset the demo?\n\nThis clears your saved, passed, joined and reported events, and permanently deletes events you posted. Use it between usability-test participants.',
+              );
+              if (!ok) return;
+              setResetting(true);
+              await resetDemo();
+              setResetting(false);
+            }}
+          >
+            <span>
+              {resetting ? 'Resetting…' : 'Reset demo'}
+              <span className="profile__account-hint">Start fresh for the next test participant</span>
+            </span>
           </button>
           <button
             type="button"

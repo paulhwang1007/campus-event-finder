@@ -1,0 +1,203 @@
+.sheet {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.sheet__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.sheet__panel {
+  position: relative;
+  max-height: 88%;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface);
+  border-radius: 16px 16px 0 0;
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.12);
+  outline: none;
+}
+
+.sheet__grabber {
+  align-self: center;
+  width: 36px;
+  height: 4px;
+  margin-top: var(--space-2);
+  border-radius: var(--radius-full);
+  background: var(--color-border);
+}
+
+.sheet__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-2) var(--space-4) 0 var(--space-5);
+}
+
+.sheet__title {
+  margin: 0;
+  font-size: var(--text-title2-size);
+  line-height: var(--text-title2-lh);
+  font-weight: 800;
+}
+
+.sheet__close {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.sheet__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-5) var(--space-5);
+  overflow-y: auto;
+}
+
+/* Form pieces shared by the sheets */
+.sheet-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  font-size: var(--text-bodysm-size);
+  font-weight: 600;
+}
+
+.sheet-field__row {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.sheet-field__row > .sheet-field {
+  flex: 1;
+}
+
+.sheet-input {
+  width: 100%;
+  font: inherit;
+  font-weight: 400;
+  font-size: var(--text-body-size);
+  color: var(--color-text);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.sheet-input:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -1px;
+}
+
+textarea.sheet-input {
+  min-height: 84px;
+  resize: vertical;
+}
+
+.sheet-hint {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-caption-size);
+  font-weight: 400;
+}
+
+.sheet-error {
+  margin: 0;
+  color: var(--color-danger);
+  font-size: var(--text-bodysm-size);
+}
+
+.sheet-preview {
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-primary-soft);
+  font-size: var(--text-bodysm-size);
+}
+
+.sheet-preview__label {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--color-primary);
+  font-size: var(--text-caption-size);
+  font-weight: 700;
+}
+
+.sheet-segments {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.sheet-segment {
+  flex: 1;
+  padding: var(--space-2);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--text-bodysm-size);
+  font-weight: 600;
+}
+
+.sheet-segment[aria-checked='true'] {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.sheet-options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.sheet-option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-bodysm-size);
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    border-color var(--dur-med) var(--ease-out),
+    background-color var(--dur-med) var(--ease-out);
+}
+
+.sheet-option:has(input:checked) {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+}
+
+.sheet-option input {
+  accent-color: var(--color-primary);
+  width: 18px;
+  height: 18px;
+  margin: 0;
+}
+
+.sheet-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.sheet-actions .btn {
+  flex: 1;
+}

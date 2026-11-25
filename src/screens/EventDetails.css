@@ -29,11 +29,6 @@
   justify-content: center;
 }
 
-.event-details__banner-icon {
-  color: var(--color-on-primary);
-  opacity: 0.9;
-}
-
 .event-details__hero {
   display: flex;
   flex-direction: column;
@@ -186,4 +181,30 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.event-details__host-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: auto;
+}
+
+.event-details__host-actions .event-details__actions {
+  margin-top: 0;
+}
+
+.event-details__report {
+  align-self: center;
+  padding: var(--space-1) var(--space-2);
+  border: none;
+  background: none;
+  color: var(--color-text-muted);
+  font-size: var(--text-caption-size);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.event-details__report:hover {
+  color: var(--color-danger);
 }
