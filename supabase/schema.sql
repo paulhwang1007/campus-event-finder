@@ -771,3 +771,25 @@ alter table public.profiles add constraint profiles_bio_length_check
 
 -- ═════════════ Profile photos (same as migrations/008) ═════════════
 alter table public.profiles add column if not exists avatar_path text;
+
+-- ═════════════ Host photo on events (same as migrations/009) ═════════════
+drop view if exists public.events_with_counts;
+create view public.events_with_counts as
+  select
+    e.*,
+    (
+      select count(*)::int
+      from public.event_responses r
+      where r.event_id = e.id and r.status in ('interested', 'going')
+    ) as interested_count,
+    (
+      select count(*)::int
+      from public.event_responses r
+      where r.event_id = e.id and r.status = 'going'
+    ) as going_count,
+    (select p.avatar_path from public.profiles p where p.id = e.organizer_id) as organizer_avatar_path
+  from public.events e
+  where public.is_cornell();
+
+revoke all on public.events_with_counts from anon, public;
+grant select on public.events_with_counts to authenticated;

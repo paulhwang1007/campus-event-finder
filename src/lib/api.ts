@@ -34,6 +34,7 @@ interface EventRow {
   cancelled: boolean;
   created_at: string;
   photo_path: string | null;
+  organizer_avatar_path?: string | null;
   interested_count?: number;
   going_count?: number;
 }
@@ -78,6 +79,7 @@ function toEvent(row: EventRow, updates: EventUpdate[] = []): CampusEvent {
     organizerType: row.organizer_type,
     organizerName: row.organizer_name,
     organizerNetId: row.organizer_net_id,
+    organizerAvatarUrl: photoUrl(row.organizer_avatar_path ?? null),
     start: row.start_at,
     end: row.end_at,
     locationName: row.location_name,

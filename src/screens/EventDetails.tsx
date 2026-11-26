@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { getCategory } from '../data/categories';
 import { EventFieldList } from '../components/EventFieldList';
+import { Avatar } from '../components/Avatar';
 import { EventImage } from '../components/EventImage';
 import { EventNotFound } from '../components/EventNotFound';
 import { MessageGuestsSheet } from '../components/MessageGuestsSheet';
@@ -75,9 +76,12 @@ export function EventDetails() {
       <EventFieldList event={event} now={now} />
 
       <div className="event-details__host">
-        <span className="event-details__host-avatar" aria-hidden="true">
-          {event.organizerName.trim().charAt(0).toUpperCase()}
-        </span>
+        {/* A club event shows the club's initials; a student's event shows their photo. */}
+        <Avatar
+          name={event.organizerName}
+          url={event.organizerType === 'student' ? event.organizerAvatarUrl : undefined}
+          size={40}
+        />
         <span className="event-details__host-info">
           <span className="event-details__host-label">{isHost ? 'Hosted by you' : 'Host'}</span>
           <span className="event-details__host-name">{event.organizerName}</span>

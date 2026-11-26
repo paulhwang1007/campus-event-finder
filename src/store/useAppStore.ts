@@ -398,7 +398,13 @@ export const useAppStore = create<AppState>()(
             if (newPath) void api.deleteEventPhoto(newPath).catch(() => {});
             throw err;
           }
-          set({ user });
+          // Their hosted events show the new photo right away (the server view has it on next load).
+          set({
+            user,
+            events: get().events.map((e) =>
+              e.organizerNetId === user.netId ? { ...e, organizerAvatarUrl: user.avatarUrl } : e,
+            ),
+          });
           // Only now that the profile points at the new photo, remove the old file.
           if (oldPath) void api.deleteEventPhoto(oldPath).catch(() => {});
         },

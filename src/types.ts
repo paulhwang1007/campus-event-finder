@@ -57,6 +57,8 @@ export interface CampusEvent {
   organizerType: OrganizerType;
   organizerName: string;
   organizerNetId: string;
+  /** The host's profile photo, if they have one. */
+  organizerAvatarUrl?: string;
   start: string;
   end: string;
   locationName: string;

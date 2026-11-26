@@ -150,19 +150,6 @@
   border-bottom: 1px solid var(--color-border);
 }
 
-.event-details__host-avatar {
-  flex: none;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--radius-full);
-  background: var(--color-primary-soft);
-  color: var(--color-primary);
-  font-weight: 700;
-}
-
 .event-details__host-info {
   flex: 1;
   min-width: 0;

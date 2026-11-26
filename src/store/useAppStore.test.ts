@@ -323,6 +323,21 @@ describe('updateProfile with a profile photo', () => {
     expect(useAppStore.getState().user?.avatarPath).toBe('me/avatar-new.jpg');
   });
 
+  it("shows the new photo on the user's hosted events right away", async () => {
+    useAppStore.setState({
+      events: [makeEvent('mine', { organizerNetId: 'abc123' }), makeEvent('theirs', { organizerNetId: 'other1' })],
+    });
+    vi.mocked(api.updateProfile).mockResolvedValue(savedUser);
+    vi.mocked(api.uploadEventPhoto).mockResolvedValue('me/avatar-new.jpg');
+    vi.mocked(api.setAvatarPath).mockResolvedValue({ ...savedUser, avatarUrl: 'https://x/new.jpg' });
+
+    await useAppStore.getState().updateProfile(input, { kind: 'replace', photo: new Blob(['x']) });
+
+    const events = useAppStore.getState().events;
+    expect(events.find((e) => e.id === 'mine')?.organizerAvatarUrl).toBe('https://x/new.jpg');
+    expect(events.find((e) => e.id === 'theirs')?.organizerAvatarUrl).toBeUndefined();
+  });
+
   it('removes the photo', async () => {
     vi.mocked(api.updateProfile).mockResolvedValue(savedUser);
     vi.mocked(api.setAvatarPath).mockResolvedValue({ ...savedUser, avatarPath: undefined });
