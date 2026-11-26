@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Avatar } from '../components/Avatar';
-import { preparePhoto } from '../lib/image';
+import { AvatarCropper } from '../components/AvatarCropper';
+import type { View } from '../lib/crop';
+import { MAX_PHOTO_BYTES } from '../lib/image';
 import { useNavigate } from 'react-router-dom';
 import { IconArrowLeft, IconCheck } from '../components/Icon';
 import { categories } from '../data/categories';
@@ -31,6 +33,11 @@ export function ProfileSetup({ mode }: Props) {
   const [avatarBusy, setAvatarBusy] = useState(false);
   const [avatarError, setAvatarError] = useState<string | null>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
+  /** The full photo being framed in the adjuster, and the framing chosen last time. */
+  const [cropSource, setCropSource] = useState<Blob | null>(null);
+  const [cropOpen, setCropOpen] = useState(false);
+  const [lastOriginal, setLastOriginal] = useState<Blob | null>(null);
+  const [lastView, setLastView] = useState<View | undefined>(undefined);
   const shownAvatar = avatarPreview ?? (avatarRemoved ? null : (user?.avatarUrl ?? null));
 
   useEffect(() => {
@@ -39,20 +46,38 @@ export function ProfileSetup({ mode }: Props) {
     };
   }, [avatarPreview]);
 
-  async function pickAvatar(file: File | undefined) {
+  /** A newly picked photo goes straight to the adjuster. */
+  function pickAvatar(file: File | undefined) {
+    if (avatarInputRef.current) avatarInputRef.current.value = '';
     if (!file) return;
     setAvatarError(null);
+    if (!file.type.startsWith('image/')) return setAvatarError('Pick an image file.');
+    if (file.size > MAX_PHOTO_BYTES) return setAvatarError('That photo is too large. Pick one under 15 MB.');
+    setLastView(undefined);
+    setCropSource(file);
+    setCropOpen(true);
+  }
+
+  /** Reopen the adjuster: on the original picked this visit, or on the saved photo. */
+  async function adjustAvatar() {
+    setAvatarError(null);
+    if (lastOriginal) {
+      setCropSource(lastOriginal);
+      setCropOpen(true);
+      return;
+    }
+    if (!user?.avatarUrl) return;
     setAvatarBusy(true);
     try {
-      const prepared = await preparePhoto(file, { square: true });
-      setAvatar(prepared);
-      setAvatarPreview(URL.createObjectURL(prepared));
-      setAvatarRemoved(false);
-    } catch (err) {
-      setAvatarError(err instanceof Error ? err.message : "Couldn't use that photo.");
+      const res = await fetch(user.avatarUrl);
+      if (!res.ok) throw new Error();
+      setLastView(undefined);
+      setCropSource(await res.blob());
+      setCropOpen(true);
+    } catch {
+      setAvatarError("Couldn't load your photo to adjust it. Choose it again with Change photo.");
     } finally {
       setAvatarBusy(false);
-      if (avatarInputRef.current) avatarInputRef.current.value = '';
     }
   }
 
@@ -60,6 +85,8 @@ export function ProfileSetup({ mode }: Props) {
     setAvatar(null);
     setAvatarPreview(null);
     setAvatarRemoved(true);
+    setLastOriginal(null);
+    setLastView(undefined);
   }
   const [interests, setInterests] = useState<CategoryId[]>(user?.interests ?? []);
   const [saving, setSaving] = useState(false);
@@ -130,12 +157,17 @@ export function ProfileSetup({ mode }: Props) {
             type="file"
             accept="image/*"
             className="profile-setup__photo-input"
-            onChange={(e) => void pickAvatar(e.target.files?.[0])}
+            onChange={(e) => pickAvatar(e.target.files?.[0])}
           />
           <div className="profile-setup__photo-buttons">
             <label htmlFor="profile-photo-input" className="btn btn--secondary btn--sm">
               {avatarBusy ? 'Preparing…' : shownAvatar ? 'Change photo' : 'Add photo'}
             </label>
+            {shownAvatar && (
+              <button type="button" className="profile-setup__photo-remove" onClick={() => void adjustAvatar()}>
+                Adjust
+              </button>
+            )}
             {shownAvatar && (
               <button type="button" className="profile-setup__photo-remove" onClick={removeAvatar}>
                 Remove
@@ -145,6 +177,21 @@ export function ProfileSetup({ mode }: Props) {
           {avatarError && <span className="profile-setup__field-error">{avatarError}</span>}
         </div>
       </div>
+
+      <AvatarCropper
+        open={cropOpen}
+        source={cropSource}
+        initialView={lastView}
+        onCancel={() => setCropOpen(false)}
+        onConfirm={(photo, view) => {
+          setAvatar(photo);
+          setAvatarPreview(URL.createObjectURL(photo));
+          setAvatarRemoved(false);
+          setLastOriginal(cropSource);
+          setLastView(view);
+          setCropOpen(false);
+        }}
+      />
 
       <label className="profile-setup__field">
         <span className="profile-setup__label">Name</span>

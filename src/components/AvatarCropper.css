@@ -1,0 +1,44 @@
+.avatar-cropper__viewport {
+  position: relative;
+  align-self: center;
+  flex: none;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background: #111;
+  cursor: grab;
+  /* Every touch here pans or pinches the photo, never scrolls the sheet. */
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.avatar-cropper__viewport:active {
+  cursor: grabbing;
+}
+
+.avatar-cropper__viewport:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 3px;
+}
+
+.avatar-cropper__img {
+  position: absolute;
+  max-width: none;
+  pointer-events: none;
+}
+
+/* Darkens everything outside the circle that will become the profile photo. */
+.avatar-cropper__mask {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+  outline: 2px solid rgba(255, 255, 255, 0.9);
+  outline-offset: -2px;
+  pointer-events: none;
+}
+
+.avatar-cropper__zoom input[type='range'] {
+  width: 100%;
+  accent-color: var(--color-primary);
+}
