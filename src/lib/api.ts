@@ -1,7 +1,6 @@
 import type {
   CampusEvent,
   CategoryId,
-  ClassYear,
   EventEditInput,
   EventUpdate,
   NewEventInput,
@@ -43,7 +42,7 @@ interface ProfileRow {
   id: string;
   net_id: string;
   name: string;
-  class_year: ClassYear | null;
+  grad_year: number | null;
   major: string | null;
   bio: string | null;
   interests: CategoryId[];
@@ -103,7 +102,7 @@ function toUser(row: ProfileRow): User {
   return {
     netId: row.net_id,
     name: row.name,
-    classYear: row.class_year ?? undefined,
+    gradYear: row.grad_year ?? undefined,
     major: row.major ?? undefined,
     bio: row.bio ?? undefined,
     interests: row.interests,
@@ -337,8 +336,9 @@ export async function updateProfile(input: ProfileInput): Promise<User> {
     .from('profiles')
     .update({
       name: input.name,
-      class_year: input.classYear,
+      grad_year: input.gradYear,
       major: input.major ?? null,
+      bio: input.bio?.trim() || null,
       interests: input.interests,
       onboarded_at: new Date().toISOString(),
     })

@@ -74,28 +74,6 @@
   outline-offset: 1px;
 }
 
-.profile-setup__chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-}
-
-.profile-setup__chip {
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-full);
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
-  color: var(--color-text);
-  font-size: var(--text-bodysm-size);
-  font-weight: var(--text-bodystrong-weight);
-}
-
-.profile-setup__chip--active {
-  border-color: var(--color-primary);
-  background: var(--color-primary);
-  color: var(--color-on-primary);
-}
-
 .profile-setup__tiles {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -157,4 +135,28 @@
   border-color: var(--color-disabled);
   color: var(--color-text-muted);
   cursor: not-allowed;
+}
+
+.profile-setup__input--year {
+  max-width: 140px;
+  font-variant-numeric: tabular-nums;
+}
+
+.profile-setup__input[aria-invalid='true'] {
+  border-color: var(--color-danger);
+}
+
+.profile-setup__textarea {
+  resize: vertical;
+  min-height: 76px;
+  font-family: inherit;
+}
+
+.profile-setup__count {
+  align-self: flex-end;
+}
+
+.profile-setup__field-error {
+  color: var(--color-danger);
+  font-size: var(--text-bodysm-size);
 }

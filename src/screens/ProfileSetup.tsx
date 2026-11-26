@@ -2,11 +2,10 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { IconArrowLeft, IconCheck } from '../components/Icon';
 import { categories } from '../data/categories';
-import { useAppStore } from '../store/useAppStore';
-import type { CategoryId, ClassYear } from '../types';
+import { BIO_MAX, gradYearRange, validateGradYear } from '../lib/profile';
+import { friendlyError, useAppStore } from '../store/useAppStore';
+import type { CategoryId } from '../types';
 import './ProfileSetup.css';
-
-const CLASS_YEARS: ClassYear[] = ['First-year', 'Sophomore', 'Junior', 'Senior', 'Transfer'];
 
 interface Props {
   mode: 'onboarding' | 'edit';
@@ -19,13 +18,17 @@ export function ProfileSetup({ mode }: Props) {
   const showToast = useAppStore((s) => s.showToast);
 
   const [name, setName] = useState(user?.name ?? '');
-  const [classYear, setClassYear] = useState<ClassYear | null>(user?.classYear ?? null);
+  const [gradYearText, setGradYearText] = useState(user?.gradYear ? String(user.gradYear) : '');
+  const [gradYearTouched, setGradYearTouched] = useState(false);
   const [major, setMajor] = useState(user?.major ?? '');
+  const [bio, setBio] = useState(user?.bio ?? '');
   const [interests, setInterests] = useState<CategoryId[]>(user?.interests ?? []);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const canSubmit = name.trim() !== '' && classYear != null && interests.length > 0 && !saving;
+  const gradYear = validateGradYear(gradYearText, new Date());
+  const { min: minYear, max: maxYear } = gradYearRange(new Date());
+  const canSubmit = name.trim() !== '' && 'year' in gradYear && interests.length > 0 && !saving;
   const isEdit = mode === 'edit';
 
   function toggleInterest(id: CategoryId) {
@@ -33,14 +36,15 @@ export function ProfileSetup({ mode }: Props) {
   }
 
   async function handleSubmit() {
-    if (!canSubmit || classYear == null) return;
+    if (!canSubmit || !('year' in gradYear)) return;
     setSaving(true);
     setError(null);
     try {
       await updateProfile({
         name: name.trim(),
-        classYear,
+        gradYear: gradYear.year,
         major: major.trim() || undefined,
+        bio: bio.trim() || undefined,
         interests,
       });
       if (isEdit) {
@@ -50,7 +54,7 @@ export function ProfileSetup({ mode }: Props) {
       // In onboarding mode, App switches to the feed once the profile is marked onboarded.
     } catch (err) {
       console.error('Failed to save profile', err);
-      setError("Couldn't save your profile. Check your connection and try again.");
+      setError(friendlyError(err));
       setSaving(false);
     }
   }
@@ -81,22 +85,29 @@ export function ProfileSetup({ mode }: Props) {
         />
       </label>
 
-      <fieldset className="profile-setup__field">
-        <legend className="profile-setup__label">Class year</legend>
-        <div className="profile-setup__chips">
-          {CLASS_YEARS.map((year) => (
-            <button
-              key={year}
-              type="button"
-              aria-pressed={classYear === year}
-              className={`profile-setup__chip${classYear === year ? ' profile-setup__chip--active' : ''}`}
-              onClick={() => setClassYear(year)}
-            >
-              {year}
-            </button>
-          ))}
-        </div>
-      </fieldset>
+      <label className="profile-setup__field">
+        <span className="profile-setup__label">Graduation year</span>
+        <input
+          className="profile-setup__input profile-setup__input--year"
+          value={gradYearText}
+          onChange={(e) => setGradYearText(e.target.value.replace(/\D/g, '').slice(0, 4))}
+          onBlur={() => setGradYearTouched(true)}
+          inputMode="numeric"
+          autoComplete="off"
+          placeholder="e.g. 2028"
+          aria-invalid={gradYearTouched && 'error' in gradYear}
+          aria-describedby="grad-year-hint"
+        />
+        {gradYearTouched && 'error' in gradYear ? (
+          <span id="grad-year-hint" className="profile-setup__field-error">
+            {gradYear.error}
+          </span>
+        ) : (
+          <span id="grad-year-hint" className="profile-setup__hint">
+            The year you'll graduate ({minYear}–{maxYear}).
+          </span>
+        )}
+      </label>
 
       <label className="profile-setup__field">
         <span className="profile-setup__label">
@@ -109,6 +120,23 @@ export function ProfileSetup({ mode }: Props) {
           maxLength={60}
           placeholder="e.g. Info Sci"
         />
+      </label>
+
+      <label className="profile-setup__field">
+        <span className="profile-setup__label">
+          Bio <span className="profile-setup__optional">(optional)</span>
+        </span>
+        <textarea
+          className="profile-setup__input profile-setup__textarea"
+          value={bio}
+          onChange={(e) => setBio(e.target.value)}
+          maxLength={BIO_MAX}
+          rows={3}
+          placeholder="e.g. Always down for pickup soccer or a late-night boba run"
+        />
+        <span className="profile-setup__hint profile-setup__count" aria-live="polite">
+          {bio.length}/{BIO_MAX}
+        </span>
       </label>
 
       <fieldset className="profile-setup__field">

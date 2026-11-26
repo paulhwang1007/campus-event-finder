@@ -23,12 +23,11 @@ export interface Category {
   gradient: string;
 }
 
-export type ClassYear = 'First-year' | 'Sophomore' | 'Junior' | 'Senior' | 'Transfer';
-
 export interface User {
   netId: string;
   name: string;
-  classYear?: ClassYear;
+  /** e.g. 2028, shown as "Class of '28". */
+  gradYear?: number;
   major?: string;
   bio?: string;
   interests: CategoryId[];
@@ -103,8 +102,9 @@ export type NewUpdateInput =
 
 export interface ProfileInput {
   name: string;
-  classYear: ClassYear;
+  gradYear: number;
   major?: string;
+  bio?: string;
   interests: CategoryId[];
 }
 

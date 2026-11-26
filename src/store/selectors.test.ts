@@ -38,7 +38,7 @@ function makeEvent(id: string, overrides: Partial<CampusEvent>): CampusEvent {
 const user: User = {
   netId: 'test123',
   name: 'Test User',
-  classYear: 'Sophomore',
+  gradYear: 2029,
   interests: ['food'],
   verified: true,
   onboarded: true,

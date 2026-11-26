@@ -6,6 +6,7 @@ import { EventRow } from '../components/EventRow';
 import { IconCalendar, IconChevronRight, IconPencil, IconPlus } from '../components/Icon';
 import { getCategory } from '../data/categories';
 import { signOut } from '../lib/supabase';
+import { formatClassOf } from '../lib/profile';
 import { formatDayHeading } from '../lib/time';
 import { getProfileEvents, spotsLeft } from '../store/selectors';
 import { useAppStore } from '../store/useAppStore';
@@ -42,7 +43,7 @@ export function Profile() {
     [user, events, confirmedIds, reportedIds, now],
   );
   const list = lists[tab];
-  const subtitle = [user?.classYear, user?.major].filter(Boolean).join(' · ');
+  const subtitle = [user?.gradYear ? formatClassOf(user.gradYear) : null, user?.major].filter(Boolean).join(' · ');
 
   return (
     <div className="screen screen--main">
