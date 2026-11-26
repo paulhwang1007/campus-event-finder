@@ -5,7 +5,7 @@ import { getCategory } from '../data/categories';
 import { EventFieldList } from '../components/EventFieldList';
 import { EventImage } from '../components/EventImage';
 import { EventNotFound } from '../components/EventNotFound';
-import { PostUpdateSheet } from '../components/PostUpdateSheet';
+import { MessageGuestsSheet } from '../components/MessageGuestsSheet';
 import { ReportSheet } from '../components/ReportSheet';
 import { IconArrowLeft, IconBookmark, IconCheck, IconPencil } from '../components/Icon';
 import { UpdateList } from '../components/UpdateList';
@@ -182,7 +182,7 @@ function AttendeeActions({
 function HostActions({ event, isOver }: { event: CampusEvent; isOver: boolean }) {
   const cancelEvent = useAppStore((s) => s.cancelEvent);
   const showToast = useAppStore((s) => s.showToast);
-  const [updating, setUpdating] = useState(false);
+  const [messaging, setMessaging] = useState(false);
 
   if (event.cancelled || isOver) {
     return (
@@ -208,11 +208,11 @@ function HostActions({ event, isOver }: { event: CampusEvent; isOver: boolean })
         >
           Cancel event
         </button>
-        <button type="button" className="event-details__btn" onClick={() => setUpdating(true)}>
-          Post update
+        <button type="button" className="event-details__btn" onClick={() => setMessaging(true)}>
+          Message guests
         </button>
       </div>
-      <PostUpdateSheet event={event} open={updating} onClose={() => setUpdating(false)} />
+      <MessageGuestsSheet event={event} open={messaging} onClose={() => setMessaging(false)} />
     </div>
   );
 }

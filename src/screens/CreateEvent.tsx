@@ -18,7 +18,8 @@ import {
 import { preparePhoto } from '../lib/image';
 import { combineDateAndTime, validateEventForm, type EditContext, type EventDraft } from '../lib/validation';
 import { formatDayHeading, isPast } from '../lib/time';
-import type { CampusEvent, PhotoChange } from '../types';
+import type { CampusEvent, EventEditInput, PhotoChange } from '../types';
+import { UPDATE_MESSAGE_MAX, updatesForEdit } from '../lib/updateMessages';
 import { useAppStore } from '../store/useAppStore';
 import { SuccessCheck } from '../components/SuccessCheck';
 import './CreateEvent.css';
@@ -103,6 +104,8 @@ function EventForm({ event }: { event?: CampusEvent }) {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   /** Editing: the host removed the event's existing photo. */
   const [photoRemoved, setPhotoRemoved] = useState(false);
+  /** Editing: optional note added to the automatic time/location update. */
+  const [guestNote, setGuestNote] = useState('');
   const existingPhoto = !photo && !photoRemoved ? event?.photoUrl : undefined;
   const shownPhoto = photoPreview ?? existingPhoto ?? null;
   const [photoError, setPhotoError] = useState<string | null>(null);
@@ -150,6 +153,37 @@ function EventForm({ event }: { event?: CampusEvent }) {
     navigate(-1);
   }
 
+  /** The draft as save-ready fields, or null while the date/time is incomplete. */
+  function draftToInput(): EventEditInput | null {
+    if (!draft.date || !draft.category) return null;
+    const start = combineDateAndTime(draft.date, draft.startTime);
+    const end = combineDateAndTime(draft.date, draft.endTime);
+    if (!start || !end) return null;
+    const timeUnchanged =
+      event != null &&
+      draft.date.getTime() === initialDraft.date?.getTime() &&
+      draft.startTime === initialDraft.startTime &&
+      draft.endTime === initialDraft.endTime;
+    return {
+      title: draft.title.trim(),
+      description: draft.description.trim(),
+      category: draft.category,
+      organizerType: draft.organizerType,
+      organizerName: draft.organizerType === 'club' ? draft.clubName.trim() : (user?.name ?? 'You'),
+      // An untouched time keeps the exact original value (the form only shows minutes).
+      start: timeUnchanged && event ? event.start : start.toISOString(),
+      end: timeUnchanged && event ? event.end : end.toISOString(),
+      locationName: draft.locationName.trim(),
+      locationCoords: draft.locationCoords ?? undefined,
+      capacity: draft.capacityMode === 'limited' ? Number(draft.capacityValue) : undefined,
+    };
+  }
+
+  // Editing: what guests will be told about time/location changes, exactly as it will be sent.
+  const previewInput = event ? draftToInput() : null;
+  const guestUpdates = event && previewInput ? updatesForEdit(event, previewInput, new Date(), guestNote) : [];
+  const updateTooLong = guestUpdates.some((u) => u.message.length > UPDATE_MESSAGE_MAX);
+
   async function handleSubmit() {
     if (submitting) return;
     const now = new Date();
@@ -164,35 +198,20 @@ function EventForm({ event }: { event?: CampusEvent }) {
       return;
     }
 
-    const start = combineDateAndTime(draft.date!, draft.startTime)!;
-    const end = combineDateAndTime(draft.date!, draft.endTime)!;
-    const timeUnchanged =
-      event != null &&
-      draft.date?.getTime() === initialDraft.date?.getTime() &&
-      draft.startTime === initialDraft.startTime &&
-      draft.endTime === initialDraft.endTime;
-    const input = {
-      title: draft.title.trim(),
-      description: draft.description.trim(),
-      category: draft.category!,
-      organizerType: draft.organizerType,
-      organizerName: draft.organizerType === 'club' ? draft.clubName.trim() : (user?.name ?? 'You'),
-      // An untouched time keeps the exact original value (the form only shows minutes).
-      start: timeUnchanged ? event.start : start.toISOString(),
-      end: timeUnchanged ? event.end : end.toISOString(),
-      locationName: draft.locationName.trim(),
-      locationCoords: draft.locationCoords ?? undefined,
-      capacity: draft.capacityMode === 'limited' ? Number(draft.capacityValue) : undefined,
-    };
+    const input = draftToInput()!;
 
     if (event) {
+      if (updateTooLong) {
+        fieldRefs.current.guestNote?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
       const photoChange: PhotoChange = photo
         ? { kind: 'replace', photo }
         : photoRemoved
           ? { kind: 'remove' }
           : { kind: 'keep' };
       setSubmitting(true);
-      const ok = await editEvent(event.id, input, photoChange);
+      const ok = await editEvent(event.id, input, photoChange, guestNote.trim() || undefined);
       setSubmitting(false);
       if (ok) {
         showToast('Changes saved');
@@ -257,7 +276,8 @@ function EventForm({ event }: { event?: CampusEvent }) {
       <h1 className="page-heading">{isEdit ? 'Edit event' : 'Create event'}</h1>
       {isEdit && (
         <p className="create-event__edit-hint">
-          Changing the time or location posts an update, so everyone who saved this event is told.
+          Guests are told automatically if you change the time or location. To send a note without changing
+          anything, use Message guests on the event page.
         </p>
       )}
 
@@ -420,6 +440,38 @@ function EventForm({ event }: { event?: CampusEvent }) {
         </label>
       )}
       {errors.policy && <p className="create-event__error">{errors.policy}</p>}
+
+      {isEdit && guestUpdates.length > 0 && (
+        <div
+          className="create-event__guest-update"
+          ref={(el) => {
+            fieldRefs.current.guestNote = el;
+          }}
+        >
+          <span className="create-event__guest-update-label">Guests will be told</span>
+          {guestUpdates.map((u) => (
+            <p key={u.type} className="create-event__guest-update-message">
+              {u.message}
+            </p>
+          ))}
+          <label className="create-event__guest-note">
+            Add a note (optional)
+            <input
+              type="text"
+              className="create-event__input"
+              value={guestNote}
+              maxLength={160}
+              placeholder="e.g. Sorry for the change!"
+              onChange={(e) => setGuestNote(e.target.value)}
+            />
+          </label>
+          {updateTooLong && (
+            <p className="create-event__error">
+              That's longer than {UPDATE_MESSAGE_MAX} characters. Shorten the note or the location name.
+            </p>
+          )}
+        </div>
+      )}
 
       {submitError && <p className="create-event__error">{submitError}</p>}
       <button type="button" className="create-event__submit" onClick={handleSubmit} disabled={submitting}>

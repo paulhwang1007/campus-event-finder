@@ -17,7 +17,7 @@ vi.mock('../lib/api', () => ({
 vi.mock('../lib/supabase', () => ({ supabase: {} }));
 
 const api = await import('../lib/api');
-const { useAppStore } = await import('./useAppStore');
+const { useAppStore, friendlyError } = await import('./useAppStore');
 const { getFeed, getInterested, hasUnreadUpdate } = await import('./selectors');
 
 function makeEvent(id: string, overrides: Partial<CampusEvent> = {}): CampusEvent {
@@ -250,5 +250,48 @@ describe('resetDemo', () => {
     expect(ok).toBe(false);
     expect(useAppStore.getState().savedIds).toEqual(['a']);
     expect(useAppStore.getState().toast?.tone).toBe('error');
+  });
+});
+
+describe('editEvent with a note for guests', () => {
+  it('adds the note to the automatic update it sends', async () => {
+    useAppStore.setState({ events: [makeEvent('a')] });
+    vi.mocked(api.editEvent).mockResolvedValue(makeEvent('a'));
+
+    await useAppStore.getState().editEvent(
+      'a',
+      {
+        title: 'Event a',
+        description: 'desc',
+        category: 'food',
+        organizerType: 'student',
+        organizerName: 'Host',
+        start: '2099-01-01T17:00:00.000Z',
+        end: '2099-01-01T19:00:00.000Z',
+        locationName: 'Mann Library',
+      },
+      { kind: 'keep' },
+      'Meet at the front desk.',
+    );
+
+    expect(vi.mocked(api.editEvent).mock.calls[0][3]).toEqual([
+      { type: 'location', message: 'Location changed from Noyes to Mann Library. Meet at the front desk.' },
+    ]);
+  });
+});
+
+describe('friendlyError', () => {
+  it('explains when the database is missing a newer migration', () => {
+    expect(friendlyError({ code: 'PGRST202', message: 'Could not find the function' })).toBe(
+      'The database needs an update. Run the latest file in supabase/migrations.',
+    );
+  });
+
+  it('shows messages the database raises on purpose', () => {
+    expect(friendlyError({ code: 'P0001', message: 'This event is full.' })).toBe('This event is full.');
+  });
+
+  it('falls back to a connection message', () => {
+    expect(friendlyError(new Error('fetch failed'))).toBe("Couldn't save that. Check your connection and try again.");
   });
 });

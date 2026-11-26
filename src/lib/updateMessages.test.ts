@@ -56,3 +56,20 @@ describe('updatesForEdit with map pins', () => {
     expect(updatesForEdit(before, pinned, now)).toEqual([]);
   });
 });
+
+describe('updatesForEdit with a host note', () => {
+  it('adds the note to the end of the last automatic update only', () => {
+    const after = {
+      ...before,
+      end: new Date(2026, 10, 2, 21, 0).toISOString(),
+      locationName: 'Libe Slope',
+    };
+    const updates = updatesForEdit(before, after, now, 'Sorry for the change!');
+    expect(updates[0].message).toBe('Time changed from Today 5:00–8:00 PM to Today 5:00–9:00 PM.');
+    expect(updates[1].message).toBe('Location changed from Arts Quad to Libe Slope. Sorry for the change!');
+  });
+
+  it('sends nothing for a note alone, without a time or location change', () => {
+    expect(updatesForEdit(before, { ...before }, now, 'Bring water')).toEqual([]);
+  });
+});

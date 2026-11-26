@@ -56,7 +56,7 @@ interface AppState {
   createEvent: (input: NewEventInput, photo?: Blob | null) => Promise<string>;
   cancelEvent: (eventId: string) => Promise<boolean>;
   /** Host edit. Time or location changes also post an update so people who saved it are told. */
-  editEvent: (eventId: string, input: EventEditInput, photo: PhotoChange) => Promise<boolean>;
+  editEvent: (eventId: string, input: EventEditInput, photo: PhotoChange, note?: string) => Promise<boolean>;
   postUpdate: (eventId: string, input: NewUpdateInput) => Promise<boolean>;
   reportEvent: (eventId: string, reason: ReportReason, note?: string) => Promise<boolean>;
   resetDemo: () => Promise<boolean>;
@@ -86,10 +86,16 @@ function without(ids: string[], id: string): string[] {
   return ids.filter((x) => x !== id);
 }
 
+/** Supabase errors meaning the app expects a function or column the database doesn't have yet. */
+const MISSING_IN_DATABASE = new Set(['PGRST202', 'PGRST204', '42883', '42703']);
+
 /** Errors raised on purpose by the database (e.g. "This event is full.") are safe to show as-is. */
-function friendlyError(err: unknown): string {
+export function friendlyError(err: unknown): string {
   const e = err as { code?: string; message?: string };
   if (e?.code === 'P0001' && e.message) return e.message;
+  if (e?.code && MISSING_IN_DATABASE.has(e.code)) {
+    return 'The database needs an update. Run the latest file in supabase/migrations.';
+  }
   return "Couldn't save that. Check your connection and try again.";
 }
 
@@ -298,7 +304,7 @@ export const useAppStore = create<AppState>()(
           );
         },
 
-        editEvent: async (eventId, input, photo) => {
+        editEvent: async (eventId, input, photo, note) => {
           const before = get().events.find((e) => e.id === eventId);
           if (!before) return false;
 
@@ -307,7 +313,7 @@ export const useAppStore = create<AppState>()(
             if (photo.kind === 'replace') uploadedPath = await api.uploadEventPhoto(photo.photo);
             const photoPath =
               photo.kind === 'replace' ? uploadedPath : photo.kind === 'remove' ? null : (before.photoPath ?? null);
-            const updates = updatesForEdit(before, input, new Date());
+            const updates = updatesForEdit(before, input, new Date(), note);
             const fresh = await api.editEvent(eventId, input, photoPath, updates);
 
             const { events, lastSeenUpdateAt } = get();

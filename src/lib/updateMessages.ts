@@ -60,6 +60,8 @@ export function updatesForEdit(
   before: { start: string; end: string; locationName: string; locationCoords?: LatLng },
   after: { start: string; end: string; locationName: string; locationCoords?: LatLng },
   now: Date,
+  /** Optional host note, added to the end of the last automatic update. */
+  note?: string,
 ): ChangeUpdate[] {
   const updates: ChangeUpdate[] = [];
   const old = { start: new Date(before.start), end: new Date(before.end) };
@@ -79,5 +81,10 @@ export function updatesForEdit(
         : locationChangeMessage(before.locationName, after.locationName.trim()),
     });
   }
+  const last = updates[updates.length - 1];
+  if (last) last.message = withNote(last.message, note);
   return updates;
 }
+
+/** Longest message the database accepts for one update. */
+export const UPDATE_MESSAGE_MAX = 280;

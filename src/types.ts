@@ -95,7 +95,7 @@ export type EventEditInput = Omit<NewEventInput, 'photoPath'>;
 /** What to do with an event's photo when saving an edit. */
 export type PhotoChange = { kind: 'keep' } | { kind: 'remove' } | { kind: 'replace'; photo: Blob };
 
-/** What a host submits from "Post update". Time and location changes also change the event. */
+/** A host update. The app sends notes from "Message guests"; time and location changes come from Edit. */
 export type NewUpdateInput =
   | { type: 'time'; message: string; start: string; end: string }
   | { type: 'location'; message: string; locationName: string; locationCoords?: LatLng }
