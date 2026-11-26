@@ -3,14 +3,13 @@ import type { ReactNode } from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { categories } from '../data/categories';
-import { PLACES } from '../data/places';
 import { EventNotFound } from '../components/EventNotFound';
+import { LocationField } from '../components/LocationField';
 import { DateTimePicker, formatTime } from '../components/DateTimePicker';
 import {
   IconArrowLeft,
   IconCalendar,
   IconChevronRight,
-  IconMapPin,
   IconMinus,
   IconPlus,
   IconCamera,
@@ -32,6 +31,7 @@ const EMPTY_DRAFT: EventDraft = {
   startTime: '',
   endTime: '',
   locationName: '',
+  locationCoords: null,
   capacityMode: 'unlimited',
   capacityValue: '10',
   organizerType: 'student',
@@ -50,6 +50,7 @@ function draftFromEvent(event: CampusEvent): EventDraft {
     startTime: format(start, 'HH:mm'),
     endTime: format(new Date(event.end), 'HH:mm'),
     locationName: event.locationName,
+    locationCoords: event.locationCoords ?? null,
     capacityMode: event.capacity != null ? 'limited' : 'unlimited',
     capacityValue: String(event.capacity ?? 10),
     organizerType: event.organizerType,
@@ -180,6 +181,7 @@ function EventForm({ event }: { event?: CampusEvent }) {
       start: timeUnchanged ? event.start : start.toISOString(),
       end: timeUnchanged ? event.end : end.toISOString(),
       locationName: draft.locationName.trim(),
+      locationCoords: draft.locationCoords ?? undefined,
       capacity: draft.capacityMode === 'limited' ? Number(draft.capacityValue) : undefined,
     };
 
@@ -293,22 +295,10 @@ function EventForm({ event }: { event?: CampusEvent }) {
       </Field>
 
       <Field label="Location" error={errors.locationName} refEl={(el) => (fieldRefs.current.locationName = el)}>
-        <div className="create-event__input-icon">
-          <IconMapPin />
-          <input
-            type="text"
-            className="create-event__input create-event__input--with-icon"
-            value={draft.locationName}
-            onChange={(e) => update('locationName', e.target.value)}
-            list="create-event-places"
-            autoComplete="off"
-          />
-          <datalist id="create-event-places">
-            {PLACES.map((place) => (
-              <option key={place.name} value={place.name} />
-            ))}
-          </datalist>
-        </div>
+        <LocationField
+          value={{ name: draft.locationName, coords: draft.locationCoords ?? undefined }}
+          onChange={({ name, coords }) => setDraft((d) => ({ ...d, locationName: name, locationCoords: coords ?? null }))}
+        />
       </Field>
 
       <Field label="Photo (optional)" error={photoError ?? undefined}>

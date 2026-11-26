@@ -45,13 +45,12 @@ const user: User = {
 };
 
 describe('getFeed', () => {
-  it('excludes past, saved, passed, reported, and own events', () => {
+  it('excludes past, saved, passed, and reported events', () => {
     const events = [
       makeEvent('past', { start: hours(-5), end: hours(-4) }),
       makeEvent('saved', {}),
       makeEvent('passed', {}),
       makeEvent('reported', {}),
-      makeEvent('own', { organizerNetId: user.netId }),
       makeEvent('visible', {}),
     ];
     const feed = getFeed(
@@ -59,6 +58,19 @@ describe('getFeed', () => {
       now,
     );
     expect(feed.map((c) => c.event.id)).toEqual(['visible']);
+  });
+
+  it('includes the user’s own events, flagged, until they move past them', () => {
+    const events = [makeEvent('own', { organizerNetId: user.netId }), makeEvent('other', {})];
+
+    const feed = getFeed({ user, events, savedIds: [], passedIds: [], reportedIds: [] }, now);
+    expect(feed.map((c) => [c.event.id, c.isOwn])).toEqual([
+      ['own', true],
+      ['other', false],
+    ]);
+
+    const afterSkip = getFeed({ user, events, savedIds: [], passedIds: ['own'], reportedIds: [] }, now);
+    expect(afterSkip.map((c) => c.event.id)).toEqual(['other']);
   });
 
   it('puts events matching the user interests first, ongoing before upcoming within each group', () => {

@@ -1,5 +1,5 @@
 import { format } from 'date-fns';
-import type { EventUpdate } from '../types';
+import type { EventUpdate, LatLng } from '../types';
 import { formatDayHeading } from './time';
 
 /** e.g. "Today 5:00–8:00 PM" or "Sat Nov 28 6:30–9:00 PM". */
@@ -28,6 +28,20 @@ export function locationChangeMessage(before: string, after: string, note?: stri
   return withNote(`Location changed from ${before} to ${after}.`, note);
 }
 
+/** Rough distance in meters between two pins (accurate enough at campus scale). */
+export function metersBetween(a: LatLng, b: LatLng): number {
+  const metersPerDegLat = 111_320;
+  const metersPerDegLng = 111_320 * Math.cos((((a.lat + b.lat) / 2) * Math.PI) / 180);
+  return Math.hypot((a.lat - b.lat) * metersPerDegLat, (a.lng - b.lng) * metersPerDegLng);
+}
+
+/** A pin moved far enough that people should be told (or was added/removed). */
+const PIN_MOVE_METERS = 30;
+function pinMoved(before?: LatLng, after?: LatLng): boolean {
+  if (!before || !after) return false; // adding a first pin or removing one isn't a move
+  return metersBetween(before, after) > PIN_MOVE_METERS;
+}
+
 /** Times are compared to the minute: the form can't express seconds. */
 export function sameMinute(a: Date, b: Date): boolean {
   return Math.floor(a.getTime() / 60000) === Math.floor(b.getTime() / 60000);
@@ -43,8 +57,8 @@ export interface ChangeUpdate {
  * change. Other edits (title, description, photo, spots) don't notify anyone.
  */
 export function updatesForEdit(
-  before: { start: string; end: string; locationName: string },
-  after: { start: string; end: string; locationName: string },
+  before: { start: string; end: string; locationName: string; locationCoords?: LatLng },
+  after: { start: string; end: string; locationName: string; locationCoords?: LatLng },
   now: Date,
 ): ChangeUpdate[] {
   const updates: ChangeUpdate[] = [];
@@ -53,8 +67,17 @@ export function updatesForEdit(
   if (!sameMinute(old.start, next.start) || !sameMinute(old.end, next.end)) {
     updates.push({ type: 'time', message: timeChangeMessage(old, next, now) });
   }
-  if (before.locationName.trim() !== after.locationName.trim()) {
-    updates.push({ type: 'location', message: locationChangeMessage(before.locationName, after.locationName.trim()) });
+  if (
+    before.locationName.trim() !== after.locationName.trim() ||
+    pinMoved(before.locationCoords, after.locationCoords)
+  ) {
+    const sameName = before.locationName.trim() === after.locationName.trim();
+    updates.push({
+      type: 'location',
+      message: sameName
+        ? `New spot for ${after.locationName.trim()}: check the map for the exact place.`
+        : locationChangeMessage(before.locationName, after.locationName.trim()),
+    });
   }
   return updates;
 }

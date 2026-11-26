@@ -41,3 +41,7 @@
 .event-map__link:hover {
   text-decoration: underline;
 }
+
+.event-map--compact .event-map__frame {
+  height: 120px;
+}

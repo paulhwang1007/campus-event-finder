@@ -19,6 +19,13 @@
   overflow-y: auto;
 }
 
+.event-card__own {
+  align-self: flex-start;
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: var(--color-primary-soft);
+}
+
 .event-card__title {
   font-size: var(--text-title1-size);
   line-height: var(--text-title1-lh);

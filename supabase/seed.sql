@@ -1,5 +1,6 @@
 -- Demo events, ported from src/data/seedEvents.ts.
--- Times are relative to when this script runs, so re-run it to refresh stale demo data.
+-- Times are relative to when this script runs. After that, refresh_demo_events() (migration 005)
+-- keeps them fresh daily and on Reset demo, so this only needs running once.
 -- Seeded events have no organizer_id (their organizers aren't real accounts).
 
 delete from public.events where organizer_id is null;
@@ -36,6 +37,38 @@ values
   ('Free haircuts (practice cuts)', 'Cosmetology student practicing cuts, free as long as you''re okay being a little adventurous.', 'services', 'student', 'Jamal W.', 'jw591', now() + interval '62 hours', now() + interval '65 hours', 'Appel Commons', null, 20, null, null),
   ('Peer tutoring drop-in: Calc 1110', 'Free drop-in tutoring, come with questions or just to work through problems together.', 'services', 'student', 'Sofia G.', 'sg734', now() + interval '12 hours', now() + interval '14 hours', 'Mann Library', null, null, null, null),
   ('Resume review walk-ins', 'Quick, casual resume reviews, no appointment needed, just bring a printed or digital copy.', 'services', 'student', 'Caleb J.', 'cj398', now() + interval '145 hours', now() + interval '147 hours', 'Willard Straight', null, 8, null, null);
+
+-- Map pins for the demo events' Cornell spots (same list as src/data/places.ts).
+update public.events e
+set location_lat = p.lat, location_lng = p.lng
+from (values
+  ('Mann Library', 42.4487, -76.4763),
+  ('Duffield Atrium', 42.4446, -76.4826),
+  ('Noyes', 42.4462, -76.488),
+  ('Willard Straight', 42.4465, -76.4856),
+  ('Appel Commons', 42.4536, -76.4775),
+  ('Arts Quad', 42.449, -76.484),
+  ('Beebe Lake', 42.451, -76.477),
+  ('Libe Slope', 42.4475, -76.486),
+  ('Helen Newman', 42.4529, -76.4777),
+  ('Teagle', 42.446, -76.479),
+  ('Collegetown', 42.441, -76.485),
+  ('Fall Creek Gorge Trail', 42.4525, -76.4825),
+  ('Statler Hall', 42.4459, -76.4818),
+  ('Schoellkopf Field', 42.4442, -76.4775),
+  ('Olin Library', 42.4478, -76.4844),
+  ('Klarman Hall', 42.4493, -76.4831),
+  ('Uris Hall', 42.4471, -76.4819),
+  ('Gates Hall', 42.445, -76.481)
+) as p(name, lat, lng)
+where e.organizer_id is null and e.location_name = p.name;
+
+-- Remember each demo event's offset from now, so refresh_demo_events() (run daily and on
+-- Reset demo) can keep their times fresh without re-running this file.
+update public.events
+set seed_start_offset = start_at - now(),
+    seed_end_offset = end_at - now()
+where organizer_id is null;
 
 -- Organizer updates on a few seeded events (PRD: at least 2), so "check what changed" can be tested.
 insert into public.event_updates (event_id, type, message, created_at)

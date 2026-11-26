@@ -18,7 +18,7 @@ A swipe-style app for finding casual events around Cornell. Frontend: Vite + Rea
 
 Then `npm install && npm run dev`.
 
-Demo event times are relative to when `seed.sql` was run; re-run it to refresh them (this replaces only the seeded events and their updates).
+Demo event times stay fresh on their own: `refresh_demo_events()` (migration 005) moves them relative to now every day at 9 AM Ithaca time, and whenever someone presses Reset demo. Run `seed.sql` once; re-running it is only needed to restore the original demo events (it replaces only the seeded events and their updates). The daily job needs the `pg_cron` extension; the migration enables it, or turn it on under Database → Extensions.
 
 ## Event photos
 
@@ -27,7 +27,9 @@ Demo event times are relative to when `seed.sql` was run; re-run it to refresh t
 
 ## Maps
 
-Event Details shows a small OpenStreetMap preview when the location matches a known Cornell spot in `src/data/places.ts` (e.g. "Mann Library, 2nd floor" matches Mann Library). Other locations get an "Open in Maps" search link. The Create/Edit form suggests the known places. Coordinates are approximate; add or correct places there.
+Hosts pick a location in a map picker: search a Cornell spot (from `src/data/places.ts`) or any Ithaca address (Photon, a free OpenStreetMap geocoder), or tap/drag a pin, then name it ("Mann Library, 2nd floor"). The pin is saved in `location_lat`/`location_lng` (migration 006), and Event Details shows a map at that spot with walking directions. Events without a pin fall back to matching a known Cornell place name, then to an "Open in Maps" link. The picker's map library loads only when the picker opens. Known-place coordinates are approximate; correct them in `places.ts`.
+
+Hosts see their own events in the Swipe view, marked "Your event". Swiping either way just moves past them (this replaces PRD FR4.5, which hid them).
 
 ## Deploying (Vercel or Netlify)
 
@@ -39,7 +41,7 @@ Event Details shows a small OpenStreetMap preview when the location matches a kn
 
 ## Running usability tests
 
-Profile → **Reset demo** clears the signed-in account's swipes, RSVPs and reports, and deletes events it posted, so the next participant starts from the seed state. Use a dedicated test account.
+Profile → **Reset demo** clears the signed-in account's swipes, RSVPs and reports, deletes events it posted, and moves the demo events' times to now, so the next participant starts from the seed state with events "happening now". Use a dedicated test account. (Moving demo times affects everyone using the app, which is fine for a prototype.)
 
 ## How data is stored
 

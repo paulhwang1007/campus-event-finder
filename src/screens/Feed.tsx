@@ -62,7 +62,12 @@ export function Feed() {
                 <SwipeDeck
                   cards={cards}
                   now={now}
-                  onSwipe={(eventId, action) => swipe(eventId, action)}
+                  onSwipe={(eventId, action) => {
+                    // Moving past your own event in either direction just skips it, quietly.
+                    const isOwn = cards.find((c) => c.event.id === eventId)?.isOwn;
+                    if (isOwn) swipe(eventId, 'pass', { silent: true });
+                    else swipe(eventId, action);
+                  }}
                   onOpen={(eventId) => navigate(`/events/${eventId}`)}
                   onJoinEvent={(event) => navigate(`/events/${event.id}/confirm`)}
                 />

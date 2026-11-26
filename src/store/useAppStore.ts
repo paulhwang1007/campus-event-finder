@@ -43,7 +43,8 @@ interface AppState {
   refresh: () => Promise<void>;
   clear: () => void;
 
-  swipe: (eventId: string, action: 'save' | 'pass') => void;
+  /** silent: no toast, e.g. when moving past your own event. */
+  swipe: (eventId: string, action: 'save' | 'pass', options?: { silent?: boolean }) => void;
   undoSwipe: (eventId: string) => void;
   toggleSaved: (eventId: string) => Promise<boolean>;
   confirmAttendance: (eventId: string) => Promise<boolean>;
@@ -175,12 +176,12 @@ export const useAppStore = create<AppState>()(
 
         clear: () => set({ status: 'idle', error: null, toast: null, ...EMPTY_SERVER_STATE }),
 
-        swipe: (eventId, action) => {
+        swipe: (eventId, action, options) => {
           const { savedIds, passedIds, events, showToast, undoSwipe } = get();
           const undo = { label: 'Undo', onClick: () => undoSwipe(eventId) };
           if (action === 'save') {
             if (savedIds.includes(eventId)) return;
-            showToast('Saved to Interested', { action: undo });
+            if (!options?.silent) showToast('Saved to Interested', { action: undo });
             void optimistic(
               {
                 savedIds: [...savedIds, eventId],
@@ -191,7 +192,7 @@ export const useAppStore = create<AppState>()(
             );
           } else {
             if (passedIds.includes(eventId) || savedIds.includes(eventId)) return;
-            showToast('Passed', { action: undo });
+            if (!options?.silent) showToast('Passed', { action: undo });
             void optimistic({ passedIds: [...passedIds, eventId] }, () => api.setResponse(eventId, 'passed'));
           }
         },
@@ -340,7 +341,7 @@ export const useAppStore = create<AppState>()(
                   input.type === 'time'
                     ? { start: input.start, end: input.end }
                     : input.type === 'location'
-                      ? { locationName: input.locationName }
+                      ? { locationName: input.locationName, locationCoords: input.locationCoords }
                       : {};
                 return { ...e, ...changed, updates: [...e.updates, update] };
               }),

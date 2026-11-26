@@ -8,15 +8,18 @@ import './EventCard.css';
 interface Props {
   event: CampusEvent;
   now: Date;
+  /** Marks the card as the viewer's own event. */
+  isOwn?: boolean;
 }
 
-export function EventCard({ event, now }: Props) {
+export function EventCard({ event, now, isOwn }: Props) {
   const left = spotsLeft(event);
   const time = formatEventTimeParts(event, now);
 
   return (
     <div className="event-card">
       <div className="event-card__body">
+        {isOwn && <span className="pill event-card__own">Your event</span>}
         <h2 className="event-card__title">{event.title}</h2>
 
         <div className="event-card__meta">

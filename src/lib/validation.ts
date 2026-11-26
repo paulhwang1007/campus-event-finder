@@ -1,4 +1,4 @@
-import type { CategoryId, OrganizerType } from '../types';
+import type { CategoryId, LatLng, OrganizerType } from '../types';
 
 export interface EventDraft {
   title: string;
@@ -8,6 +8,8 @@ export interface EventDraft {
   startTime: string;
   endTime: string;
   locationName: string;
+  /** Map pin from the location picker; optional (a name alone is allowed). */
+  locationCoords?: LatLng | null;
   capacityMode: 'limited' | 'unlimited';
   capacityValue: string;
   organizerType: OrganizerType;

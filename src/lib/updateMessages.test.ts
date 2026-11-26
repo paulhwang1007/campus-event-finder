@@ -36,3 +36,23 @@ describe('updatesForEdit', () => {
     expect(updates[1].message).toBe('Location changed from Arts Quad to Libe Slope.');
   });
 });
+
+describe('updatesForEdit with map pins', () => {
+  const pinned = { ...before, locationCoords: { lat: 42.449, lng: -76.484 } };
+
+  it('ignores tiny pin nudges', () => {
+    const after = { ...pinned, locationCoords: { lat: 42.4491, lng: -76.4841 } }; // ~14m
+    expect(updatesForEdit(pinned, after, now)).toEqual([]);
+  });
+
+  it('posts an update when the pin moves to a different spot with the same name', () => {
+    const after = { ...pinned, locationCoords: { lat: 42.4475, lng: -76.486 } }; // ~200m
+    expect(updatesForEdit(pinned, after, now)).toEqual([
+      { type: 'location', message: 'New spot for Arts Quad: check the map for the exact place.' },
+    ]);
+  });
+
+  it("doesn't count adding a first pin as a move", () => {
+    expect(updatesForEdit(before, pinned, now)).toEqual([]);
+  });
+});

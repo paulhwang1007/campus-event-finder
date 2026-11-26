@@ -81,6 +81,14 @@
   background: var(--color-primary);
 }
 
+.swipe-deck__tint--own {
+  background: var(--color-neutral);
+}
+
+.swipe-deck__label--own {
+  color: var(--color-neutral);
+}
+
 .swipe-deck__chevron {
   position: absolute;
   z-index: 3;

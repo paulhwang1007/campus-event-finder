@@ -26,6 +26,8 @@ interface EventRow {
   start_at: string;
   end_at: string;
   location_name: string;
+  location_lat: number | null;
+  location_lng: number | null;
   location_note: string | null;
   capacity: number | null;
   accessibility: string | null;
@@ -79,6 +81,10 @@ function toEvent(row: EventRow, updates: EventUpdate[] = []): CampusEvent {
     start: row.start_at,
     end: row.end_at,
     locationName: row.location_name,
+    locationCoords:
+      row.location_lat != null && row.location_lng != null
+        ? { lat: row.location_lat, lng: row.location_lng }
+        : undefined,
     locationNote: row.location_note ?? undefined,
     capacity: row.capacity ?? undefined,
     interestedCount: row.interested_count ?? 0,
@@ -165,6 +171,8 @@ export async function editEvent(
     p_start_at: input.start,
     p_end_at: input.end,
     p_location_name: input.locationName,
+    p_location_lat: input.locationCoords?.lat ?? null,
+    p_location_lng: input.locationCoords?.lng ?? null,
     p_capacity: input.capacity ?? null,
     p_photo_path: photoPath,
     p_updates: updates,
@@ -200,6 +208,8 @@ export async function postEventUpdate(eventId: string, input: NewUpdateInput): P
       p_start_at: input.type === 'time' ? input.start : null,
       p_end_at: input.type === 'time' ? input.end : null,
       p_location_name: input.type === 'location' ? input.locationName : null,
+      p_location_lat: input.type === 'location' ? (input.locationCoords?.lat ?? null) : null,
+      p_location_lng: input.type === 'location' ? (input.locationCoords?.lng ?? null) : null,
     })
     .single();
   if (error) throw error;
@@ -222,8 +232,9 @@ export async function deleteEventPhoto(path: string): Promise<void> {
 }
 
 /**
- * Demo reset for usability tests: clears this user's swipes, RSVPs and reports, and deletes
- * the events they posted (with their photos), so the next participant starts from the seed state.
+ * Demo reset for usability tests: clears this user's swipes, RSVPs and reports, deletes the
+ * events they posted (with their photos), and re-anchors the demo events' times to now, so the
+ * next participant starts from the seed state.
  */
 export async function resetDemo(): Promise<void> {
   const userId = await currentUserId();
@@ -243,6 +254,17 @@ export async function resetDemo(): Promise<void> {
 
   const photos = mine.map((e) => e.photo_path as string | null).filter((p): p is string => !!p);
   if (photos.length > 0) await supabase.storage.from(PHOTO_BUCKET).remove(photos);
+
+  await refreshDemoEvents();
+}
+
+/**
+ * Moves the seeded demo events to times relative to now, so "happening now" really is.
+ * Best effort: if the database function isn't installed yet (migration 005), times just stay put.
+ */
+export async function refreshDemoEvents(): Promise<void> {
+  const { error } = await supabase.rpc('refresh_demo_events');
+  if (error) console.warn('Could not refresh demo event times', error);
 }
 
 export async function fetchMyResponses(): Promise<{ eventId: string; status: ResponseStatus }[]> {
@@ -298,6 +320,8 @@ export async function createEvent(input: NewEventInput): Promise<CampusEvent> {
       start_at: input.start,
       end_at: input.end,
       location_name: input.locationName,
+      location_lat: input.locationCoords?.lat ?? null,
+      location_lng: input.locationCoords?.lng ?? null,
       capacity: input.capacity ?? null,
       photo_path: input.photoPath ?? null,
     })

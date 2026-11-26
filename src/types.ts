@@ -7,6 +7,12 @@ export type CategoryId =
   | 'study'
   | 'services';
 
+/** A map pin. */
+export interface LatLng {
+  lat: number;
+  lng: number;
+}
+
 export type IconComponent = (props: { size?: number; className?: string }) => React.JSX.Element;
 
 export interface Category {
@@ -51,6 +57,8 @@ export interface CampusEvent {
   start: string;
   end: string;
   locationName: string;
+  /** Exact spot picked on the map, if the host chose one. */
+  locationCoords?: LatLng;
   locationNote?: string;
   capacity?: number;
   interestedCount: number;
@@ -75,6 +83,7 @@ export interface NewEventInput {
   start: string;
   end: string;
   locationName: string;
+  locationCoords?: LatLng;
   capacity?: number;
   /** Storage path returned by uploadEventPhoto. */
   photoPath?: string;
@@ -89,7 +98,7 @@ export type PhotoChange = { kind: 'keep' } | { kind: 'remove' } | { kind: 'repla
 /** What a host submits from "Post update". Time and location changes also change the event. */
 export type NewUpdateInput =
   | { type: 'time'; message: string; start: string; end: string }
-  | { type: 'location'; message: string; locationName: string }
+  | { type: 'location'; message: string; locationName: string; locationCoords?: LatLng }
   | { type: 'note'; message: string };
 
 export interface ProfileInput {

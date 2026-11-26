@@ -7,6 +7,8 @@ export { isOngoing, isPast };
 export interface FeedCard {
   event: CampusEvent;
   isOutsideInterests: boolean;
+  /** The signed-in user is hosting it: shown marked "Your event", and swiping just moves past it. */
+  isOwn: boolean;
 }
 
 interface FeedState {
@@ -34,7 +36,6 @@ export function getFeed(state: FeedState, now: Date, categoryFilter?: CategoryId
     if (isPast(e, now)) return false;
     if (e.cancelled) return false;
     if (excluded.has(e.id)) return false;
-    if (user && e.organizerNetId === user.netId) return false;
     if (categoryFilter && categoryFilter !== 'all' && e.category !== categoryFilter) return false;
     return true;
   });
@@ -45,9 +46,10 @@ export function getFeed(state: FeedState, now: Date, categoryFilter?: CategoryId
   const matching = sortByStart(visible.filter(matches), now);
   const rest = sortByStart(visible.filter((e) => !matches(e)), now);
 
+  const isOwn = (e: CampusEvent) => user != null && e.organizerNetId === user.netId;
   return [
-    ...matching.map((event) => ({ event, isOutsideInterests: false })),
-    ...rest.map((event) => ({ event, isOutsideInterests: true })),
+    ...matching.map((event) => ({ event, isOutsideInterests: false, isOwn: isOwn(event) })),
+    ...rest.map((event) => ({ event, isOutsideInterests: true, isOwn: isOwn(event) })),
   ];
 }
 

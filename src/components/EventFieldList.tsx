@@ -24,7 +24,7 @@ export function EventFieldList({ event, now }: Props) {
       <Field icon={<IconMapPin size={14} />} label="Where">
         {event.locationName}
         {event.locationNote ? ` — ${event.locationNote}` : ''}
-        <EventMap locationName={event.locationName} />
+        <EventMap locationName={event.locationName} coords={event.locationCoords} />
       </Field>
 
       <Field label="About">{event.description}</Field>

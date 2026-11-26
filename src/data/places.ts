@@ -59,10 +59,6 @@ export function findPlace(locationName: string): Place | null {
   return INDEX.find(({ key }) => text.includes(key))?.place ?? null;
 }
 
-export function directionsUrl(place: Place): string {
-  return `https://www.google.com/maps/dir/?api=1&destination=${place.lat},${place.lng}&travelmode=walking`;
-}
-
 export function searchMapsUrl(locationName: string): string {
   const query = `${locationName}, Cornell University, Ithaca NY`;
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;

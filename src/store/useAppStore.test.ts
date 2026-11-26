@@ -8,6 +8,11 @@ vi.mock('../lib/api', () => ({
   createEvent: vi.fn(),
   deleteEventPhoto: vi.fn(() => Promise.resolve()),
   editEvent: vi.fn(),
+  resetDemo: vi.fn(),
+  fetchProfile: vi.fn(),
+  fetchEvents: vi.fn(),
+  fetchMyResponses: vi.fn(),
+  fetchMyReportedIds: vi.fn(),
 }));
 vi.mock('../lib/supabase', () => ({ supabase: {} }));
 
@@ -209,5 +214,41 @@ describe('editEvent', () => {
     expect(api.deleteEventPhoto).not.toHaveBeenCalledWith('host/old.jpg');
     expect(useAppStore.getState().events[0].photoPath).toBe('host/old.jpg');
     expect(useAppStore.getState().toast?.message).toBe("6 people are going, so spots can't be lower than 6.");
+  });
+});
+
+describe('resetDemo', () => {
+  it('reloads fresh data (including refreshed demo times) after resetting', async () => {
+    vi.mocked(api.resetDemo).mockResolvedValue();
+    vi.mocked(api.fetchProfile).mockResolvedValue({
+      netId: 'abc123',
+      name: 'Tester',
+      interests: [],
+      verified: true,
+      onboarded: true,
+    });
+    const moved = makeEvent('a', { start: '2099-02-01T17:00:00.000Z', end: '2099-02-01T19:00:00.000Z' });
+    vi.mocked(api.fetchEvents).mockResolvedValue([moved]);
+    vi.mocked(api.fetchMyResponses).mockResolvedValue([]);
+    vi.mocked(api.fetchMyReportedIds).mockResolvedValue([]);
+    useAppStore.setState({ lastSeenUpdateAt: { a: '2026-01-01T00:00:00.000Z' } });
+
+    const ok = await useAppStore.getState().resetDemo();
+
+    const state = useAppStore.getState();
+    expect(ok).toBe(true);
+    expect(state.events[0].start).toBe('2099-02-01T17:00:00.000Z');
+    expect(state.savedIds).toEqual([]);
+    expect(state.lastSeenUpdateAt).toEqual({});
+  });
+
+  it('keeps the current data and shows an error if the reset fails', async () => {
+    vi.mocked(api.resetDemo).mockRejectedValue(new Error('offline'));
+
+    const ok = await useAppStore.getState().resetDemo();
+
+    expect(ok).toBe(false);
+    expect(useAppStore.getState().savedIds).toEqual(['a']);
+    expect(useAppStore.getState().toast?.tone).toBe('error');
   });
 });

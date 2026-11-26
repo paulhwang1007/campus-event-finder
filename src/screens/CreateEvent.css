@@ -53,23 +53,6 @@
   resize: vertical;
 }
 
-.create-event__input-icon {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.create-event__input-icon svg {
-  position: absolute;
-  left: var(--space-3);
-  color: var(--color-text-muted);
-  pointer-events: none;
-}
-
-.create-event__input--with-icon {
-  padding-left: calc(var(--space-3) * 2 + 16px);
-}
-
 .create-event__chip-row {
   display: flex;
   gap: var(--space-2);

@@ -1,0 +1,124 @@
+.location-picker__search {
+  position: relative;
+}
+
+.location-picker__results {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 1000; /* above the map's own layers */
+  max-height: 260px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-raised);
+}
+
+.location-picker__result {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--color-text);
+  text-align: left;
+}
+
+.location-picker__result:hover,
+.location-picker__result:focus-visible {
+  background: var(--color-primary-soft);
+}
+
+.location-picker__result svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--color-primary);
+}
+
+.location-picker__result-label {
+  display: block;
+  font-weight: 600;
+  font-size: var(--text-bodysm-size);
+}
+
+.location-picker__result-detail {
+  display: block;
+  color: var(--color-text-muted);
+  font-size: var(--text-caption-size);
+}
+
+.location-picker__status {
+  padding: var(--space-3) var(--space-2);
+  color: var(--color-text-muted);
+  font-size: var(--text-bodysm-size);
+}
+
+.location-picker__map {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.location-picker__map .leaflet-container {
+  height: 240px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  font: inherit;
+  /* The map handles its own touch panning; the sheet shouldn't scroll under it. */
+  touch-action: none;
+}
+
+.location-picker__map-hint {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-caption-size);
+  text-align: center;
+}
+
+.location-picker__pin {
+  background: none;
+  border: none;
+}
+
+/* Teardrop pin in Cornell red */
+.location-picker__pin-dot {
+  position: absolute;
+  left: 2px;
+  top: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 50% 50% 50% 0;
+  background: var(--color-primary);
+  border: 2px solid #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  transform: rotate(-45deg);
+}
+
+.location-picker__pin-dot::after {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.location-picker__remove {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--color-text-muted);
+  font-size: var(--text-caption-size);
+  text-decoration: underline;
+}

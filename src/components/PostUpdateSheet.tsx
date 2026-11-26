@@ -1,9 +1,10 @@
 import { format } from 'date-fns';
 import { useState } from 'react';
-import { locationChangeMessage, timeChangeMessage } from '../lib/updateMessages';
+import { locationChangeMessage, metersBetween, timeChangeMessage } from '../lib/updateMessages';
 import { combineDateAndTime } from '../lib/validation';
 import { useAppStore } from '../store/useAppStore';
-import type { CampusEvent, EventUpdate, NewUpdateInput } from '../types';
+import type { CampusEvent, EventUpdate, LatLng, NewUpdateInput } from '../types';
+import { LocationField } from './LocationField';
 import { Sheet } from './Sheet';
 
 const MESSAGE_MAX = 280;
@@ -36,6 +37,7 @@ export function PostUpdateSheet({ event, open, onClose }: Props) {
   const [startTime, setStartTime] = useState(format(oldStart, 'HH:mm'));
   const [endTime, setEndTime] = useState(format(oldEnd, 'HH:mm'));
   const [location, setLocation] = useState(event.locationName);
+  const [coords, setCoords] = useState<LatLng | undefined>(event.locationCoords);
   const [note, setNote] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -61,11 +63,17 @@ export function PostUpdateSheet({ event, open, onClose }: Props) {
       input = { type, message, start: newStart.toISOString(), end: newEnd.toISOString() };
     }
   } else if (type === 'location') {
-    if (!trimmedLocation) problem = 'Enter the new location.';
-    else if (trimmedLocation === event.locationName) problem = "That's the same location as before.";
+    const sameName = trimmedLocation === event.locationName;
+    const pinMoved =
+      coords != null && event.locationCoords != null && metersBetween(coords, event.locationCoords) > 30;
+    const pinChanged = pinMoved || (coords == null) !== (event.locationCoords == null);
+    if (!trimmedLocation) problem = 'Choose the new location.';
+    else if (sameName && !pinChanged) problem = "That's the same location as before.";
     else {
-      const message = locationChangeMessage(event.locationName, trimmedLocation, trimmedNote);
-      input = { type, message, locationName: trimmedLocation };
+      const message = sameName
+        ? `New spot for ${trimmedLocation}: check the map for the exact place.${trimmedNote ? ` ${trimmedNote}` : ''}`
+        : locationChangeMessage(event.locationName, trimmedLocation, trimmedNote);
+      input = { type, message, locationName: trimmedLocation, locationCoords: coords };
     }
   } else if (!trimmedNote) {
     problem = 'Write a short note.';
@@ -140,15 +148,17 @@ export function PostUpdateSheet({ event, open, onClose }: Props) {
       )}
 
       {type === 'location' && (
-        <label className="sheet-field">
+        <div className="sheet-field">
           New location
-          <input
-            className="sheet-input"
-            value={location}
-            maxLength={120}
-            onChange={(e) => setLocation(e.target.value)}
+          <LocationField
+            value={{ name: location, coords }}
+            onChange={(next) => {
+              setLocation(next.name);
+              setCoords(next.coords);
+              setError(null);
+            }}
           />
-        </label>
+        </div>
       )}
 
       <label className="sheet-field">

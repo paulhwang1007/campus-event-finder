@@ -60,7 +60,7 @@ export function SwipeDeck({ cards, now, onSwipe, onOpen, onJoinEvent }: Props) {
             className="swipe-deck__card swipe-deck__card--back"
             style={{ scale: backScale, y: backY, opacity: backOpacity }}
           >
-            <EventCard event={next.event} now={now} />
+            <EventCard event={next.event} now={now} isOwn={next.isOwn} />
           </motion.div>
         )}
         <TopCard
@@ -77,7 +77,7 @@ export function SwipeDeck({ cards, now, onSwipe, onOpen, onJoinEvent }: Props) {
             attached natively to the draggable element, so a click here never passes through it. */}
         <button
           type="button"
-          aria-label="Pass on this event"
+          aria-label={top.isOwn ? 'Next event' : 'Pass on this event'}
           className="no-press swipe-deck__chevron swipe-deck__chevron--left"
           onClick={() => commitRef.current?.('pass')}
         >
@@ -85,7 +85,7 @@ export function SwipeDeck({ cards, now, onSwipe, onOpen, onJoinEvent }: Props) {
         </button>
         <button
           type="button"
-          aria-label="Mark this event as interested"
+          aria-label={top.isOwn ? 'Next event' : 'Mark this event as interested'}
           className="no-press swipe-deck__chevron swipe-deck__chevron--right"
           onClick={() => commitRef.current?.('save')}
         >
@@ -94,15 +94,23 @@ export function SwipeDeck({ cards, now, onSwipe, onOpen, onJoinEvent }: Props) {
       </div>
 
       <div className="swipe-deck__actions">
-        <p className="swipe-deck__hint">Swipe left to skip or right to save</p>
-        <button
-          type="button"
-          className="btn swipe-deck__join"
-          onClick={() => onJoinEvent(top.event)}
-          disabled={isFull(top.event)}
-        >
-          {isFull(top.event) ? 'Event full' : 'Join event'}
-        </button>
+        <p className="swipe-deck__hint">
+          {top.isOwn ? "This is your event. Swipe either way to move on" : 'Swipe left to skip or right to save'}
+        </p>
+        {top.isOwn ? (
+          <button type="button" className="btn btn--secondary swipe-deck__join" onClick={() => onOpen(top.event.id)}>
+            View your event
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="btn swipe-deck__join"
+            onClick={() => onJoinEvent(top.event)}
+            disabled={isFull(top.event)}
+          >
+            {isFull(top.event) ? 'Event full' : 'Join event'}
+          </button>
+        )}
       </div>
     </div>
   );
@@ -194,15 +202,28 @@ function TopCard({ card, now, onCommit, onOpen, commitRef, x }: TopCardProps) {
         if (e.key === 'Enter') onOpen();
       }}
     >
-      <motion.span className="swipe-deck__tint swipe-deck__tint--save" style={{ opacity: saveTint }} />
-      <motion.span className="swipe-deck__tint swipe-deck__tint--pass" style={{ opacity: passTint }} />
-      <motion.span className="swipe-deck__label swipe-deck__label--save" style={{ opacity: saveOpacity, scale: saveScale, rotate: -8 }}>
-        INTERESTED
+      {/* Your own event: both directions just move on, so both sides read NEXT in gray. */}
+      <motion.span
+        className={`swipe-deck__tint ${card.isOwn ? 'swipe-deck__tint--own' : 'swipe-deck__tint--save'}`}
+        style={{ opacity: saveTint }}
+      />
+      <motion.span
+        className={`swipe-deck__tint ${card.isOwn ? 'swipe-deck__tint--own' : 'swipe-deck__tint--pass'}`}
+        style={{ opacity: passTint }}
+      />
+      <motion.span
+        className={`swipe-deck__label swipe-deck__label--save${card.isOwn ? ' swipe-deck__label--own' : ''}`}
+        style={{ opacity: saveOpacity, scale: saveScale, rotate: -8 }}
+      >
+        {card.isOwn ? 'NEXT' : 'INTERESTED'}
       </motion.span>
-      <motion.span className="swipe-deck__label swipe-deck__label--pass" style={{ opacity: passOpacity, scale: passScale, rotate: 8 }}>
-        PASS
+      <motion.span
+        className={`swipe-deck__label swipe-deck__label--pass${card.isOwn ? ' swipe-deck__label--own' : ''}`}
+        style={{ opacity: passOpacity, scale: passScale, rotate: 8 }}
+      >
+        {card.isOwn ? 'NEXT' : 'PASS'}
       </motion.span>
-      <EventCard event={card.event} now={now} />
+      <EventCard event={card.event} now={now} isOwn={card.isOwn} />
     </motion.div>
   );
 }

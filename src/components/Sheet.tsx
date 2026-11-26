@@ -11,10 +11,19 @@ interface Props {
   children: ReactNode;
 }
 
+/** Open sheets, newest last: only the top one closes on Escape. */
+const openSheets: string[] = [];
+
 /** Bottom sheet that slides up over the current screen. Escape or tapping the backdrop closes it. */
 export function Sheet({ open, title, onClose, children }: Props) {
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
+  // Callers pass a new onClose each render; keep the latest without re-running the open logic
+  // (which would steal focus back to the first field on every keystroke).
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
 
   useEffect(() => {
     if (!open) return;
@@ -24,16 +33,18 @@ export function Sheet({ open, title, onClose, children }: Props) {
       const first = panelRef.current?.querySelector<HTMLElement>('input, textarea, select, button:not(.sheet__close)');
       (first ?? panelRef.current)?.focus();
     }, 50);
+    openSheets.push(titleId);
     function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape' && openSheets[openSheets.length - 1] === titleId) onCloseRef.current();
     }
     window.addEventListener('keydown', onKey);
     return () => {
+      openSheets.splice(openSheets.indexOf(titleId), 1);
       window.clearTimeout(timer);
       window.removeEventListener('keydown', onKey);
       previouslyFocused?.focus?.();
     };
-  }, [open, onClose]);
+  }, [open, titleId]);
 
   const root = document.getElementById('root');
   if (!root) return null;
