@@ -768,3 +768,6 @@ where p.grad_year is null and p.class_year in ('Senior', 'Junior', 'Sophomore', 
 alter table public.profiles drop constraint if exists profiles_bio_length_check;
 alter table public.profiles add constraint profiles_bio_length_check
   check (bio is null or char_length(bio) <= 160) not valid;
+
+-- ═════════════ Profile photos (same as migrations/008) ═════════════
+alter table public.profiles add column if not exists avatar_path text;

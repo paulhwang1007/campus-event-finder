@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { Avatar } from '../components/Avatar';
+import { preparePhoto } from '../lib/image';
 import { useNavigate } from 'react-router-dom';
 import { IconArrowLeft, IconCheck } from '../components/Icon';
 import { categories } from '../data/categories';
 import { BIO_MAX, gradYearRange, validateGradYear } from '../lib/profile';
 import { friendlyError, useAppStore } from '../store/useAppStore';
-import type { CategoryId } from '../types';
+import type { CategoryId, PhotoChange } from '../types';
 import './ProfileSetup.css';
 
 interface Props {
@@ -22,6 +24,43 @@ export function ProfileSetup({ mode }: Props) {
   const [gradYearTouched, setGradYearTouched] = useState(false);
   const [major, setMajor] = useState(user?.major ?? '');
   const [bio, setBio] = useState(user?.bio ?? '');
+  // Profile photo: a newly picked one (with a local preview), or "removed".
+  const [avatar, setAvatar] = useState<Blob | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [avatarRemoved, setAvatarRemoved] = useState(false);
+  const [avatarBusy, setAvatarBusy] = useState(false);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const shownAvatar = avatarPreview ?? (avatarRemoved ? null : (user?.avatarUrl ?? null));
+
+  useEffect(() => {
+    return () => {
+      if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+    };
+  }, [avatarPreview]);
+
+  async function pickAvatar(file: File | undefined) {
+    if (!file) return;
+    setAvatarError(null);
+    setAvatarBusy(true);
+    try {
+      const prepared = await preparePhoto(file, { square: true });
+      setAvatar(prepared);
+      setAvatarPreview(URL.createObjectURL(prepared));
+      setAvatarRemoved(false);
+    } catch (err) {
+      setAvatarError(err instanceof Error ? err.message : "Couldn't use that photo.");
+    } finally {
+      setAvatarBusy(false);
+      if (avatarInputRef.current) avatarInputRef.current.value = '';
+    }
+  }
+
+  function removeAvatar() {
+    setAvatar(null);
+    setAvatarPreview(null);
+    setAvatarRemoved(true);
+  }
   const [interests, setInterests] = useState<CategoryId[]>(user?.interests ?? []);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -40,13 +79,18 @@ export function ProfileSetup({ mode }: Props) {
     setSaving(true);
     setError(null);
     try {
+      const avatarChange: PhotoChange = avatar
+        ? { kind: 'replace', photo: avatar }
+        : avatarRemoved
+          ? { kind: 'remove' }
+          : { kind: 'keep' };
       await updateProfile({
         name: name.trim(),
         gradYear: gradYear.year,
         major: major.trim() || undefined,
         bio: bio.trim() || undefined,
         interests,
-      });
+      }, avatarChange);
       if (isEdit) {
         showToast('Profile saved');
         navigate('/profile');
@@ -72,6 +116,34 @@ export function ProfileSetup({ mode }: Props) {
         {!isEdit && (
           <p className="profile-setup__subtitle">This helps us show you events you'll actually want to go to.</p>
         )}
+      </div>
+
+      <div className="profile-setup__photo">
+        <Avatar name={name || user?.name} url={shownAvatar} size={88} />
+        <div className="profile-setup__photo-actions">
+          <span className="profile-setup__label">
+            Profile photo <span className="profile-setup__optional">(optional)</span>
+          </span>
+          <input
+            ref={avatarInputRef}
+            id="profile-photo-input"
+            type="file"
+            accept="image/*"
+            className="profile-setup__photo-input"
+            onChange={(e) => void pickAvatar(e.target.files?.[0])}
+          />
+          <div className="profile-setup__photo-buttons">
+            <label htmlFor="profile-photo-input" className="btn btn--secondary btn--sm">
+              {avatarBusy ? 'Preparing…' : shownAvatar ? 'Change photo' : 'Add photo'}
+            </label>
+            {shownAvatar && (
+              <button type="button" className="profile-setup__photo-remove" onClick={removeAvatar}>
+                Remove
+              </button>
+            )}
+          </div>
+          {avatarError && <span className="profile-setup__field-error">{avatarError}</span>}
+        </div>
       </div>
 
       <label className="profile-setup__field">

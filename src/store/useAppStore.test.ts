@@ -13,6 +13,8 @@ vi.mock('../lib/api', () => ({
   fetchEvents: vi.fn(),
   fetchMyResponses: vi.fn(),
   fetchMyReportedIds: vi.fn(),
+  updateProfile: vi.fn(),
+  setAvatarPath: vi.fn(),
 }));
 vi.mock('../lib/supabase', () => ({ supabase: {} }));
 
@@ -293,5 +295,62 @@ describe('friendlyError', () => {
 
   it('falls back to a connection message', () => {
     expect(friendlyError(new Error('fetch failed'))).toBe("Couldn't save that. Check your connection and try again.");
+  });
+});
+
+describe('updateProfile with a profile photo', () => {
+  const input = { name: 'Tester', gradYear: 2028, interests: ['food' as const] };
+  const savedUser = {
+    netId: 'abc123',
+    name: 'Tester',
+    gradYear: 2028,
+    interests: ['food' as const],
+    verified: true,
+    onboarded: true,
+    avatarPath: 'me/avatar-old.jpg',
+  };
+
+  it('uploads the new photo, points the profile at it, then deletes the old one', async () => {
+    vi.mocked(api.updateProfile).mockResolvedValue(savedUser);
+    vi.mocked(api.uploadEventPhoto).mockResolvedValue('me/avatar-new.jpg');
+    vi.mocked(api.setAvatarPath).mockResolvedValue({ ...savedUser, avatarPath: 'me/avatar-new.jpg' });
+
+    await useAppStore.getState().updateProfile(input, { kind: 'replace', photo: new Blob(['x']) });
+
+    expect(api.uploadEventPhoto).toHaveBeenCalledWith(expect.any(Blob), 'avatar-');
+    expect(api.setAvatarPath).toHaveBeenCalledWith('me/avatar-new.jpg');
+    expect(api.deleteEventPhoto).toHaveBeenCalledWith('me/avatar-old.jpg');
+    expect(useAppStore.getState().user?.avatarPath).toBe('me/avatar-new.jpg');
+  });
+
+  it('removes the photo', async () => {
+    vi.mocked(api.updateProfile).mockResolvedValue(savedUser);
+    vi.mocked(api.setAvatarPath).mockResolvedValue({ ...savedUser, avatarPath: undefined });
+
+    await useAppStore.getState().updateProfile(input, { kind: 'remove' });
+
+    expect(api.setAvatarPath).toHaveBeenCalledWith(null);
+    expect(api.deleteEventPhoto).toHaveBeenCalledWith('me/avatar-old.jpg');
+  });
+
+  it('leaves the photo alone when it did not change', async () => {
+    vi.mocked(api.updateProfile).mockResolvedValue(savedUser);
+
+    await useAppStore.getState().updateProfile(input, { kind: 'keep' });
+
+    expect(api.setAvatarPath).not.toHaveBeenCalled();
+    expect(api.deleteEventPhoto).not.toHaveBeenCalled();
+  });
+
+  it('keeps the old photo and cleans up the upload if saving the new one fails', async () => {
+    vi.mocked(api.updateProfile).mockResolvedValue(savedUser);
+    vi.mocked(api.uploadEventPhoto).mockResolvedValue('me/avatar-new.jpg');
+    vi.mocked(api.setAvatarPath).mockRejectedValue(new Error('offline'));
+
+    await expect(
+      useAppStore.getState().updateProfile(input, { kind: 'replace', photo: new Blob(['x']) }),
+    ).rejects.toThrow('offline');
+    expect(api.deleteEventPhoto).toHaveBeenCalledWith('me/avatar-new.jpg');
+    expect(api.deleteEventPhoto).not.toHaveBeenCalledWith('me/avatar-old.jpg');
   });
 });

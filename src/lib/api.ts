@@ -45,6 +45,7 @@ interface ProfileRow {
   grad_year: number | null;
   major: string | null;
   bio: string | null;
+  avatar_path: string | null;
   interests: CategoryId[];
   onboarded_at: string | null;
 }
@@ -105,6 +106,8 @@ function toUser(row: ProfileRow): User {
     gradYear: row.grad_year ?? undefined,
     major: row.major ?? undefined,
     bio: row.bio ?? undefined,
+    avatarUrl: photoUrl(row.avatar_path),
+    avatarPath: row.avatar_path ?? undefined,
     interests: row.interests,
     verified: true, // only @cornell.edu accounts can sign up
     onboarded: row.onboarded_at != null,
@@ -216,9 +219,9 @@ export async function postEventUpdate(eventId: string, input: NewUpdateInput): P
 }
 
 /** Uploads a (already resized) photo into the user's folder and returns its storage path. */
-export async function uploadEventPhoto(photo: Blob): Promise<string> {
+export async function uploadEventPhoto(photo: Blob, prefix = ''): Promise<string> {
   const userId = await currentUserId();
-  const path = `${userId}/${crypto.randomUUID()}.jpg`;
+  const path = `${userId}/${prefix}${crypto.randomUUID()}.jpg`;
   const { error } = await supabase.storage
     .from(PHOTO_BUCKET)
     .upload(path, photo, { contentType: 'image/jpeg', cacheControl: '31536000' });
@@ -328,6 +331,19 @@ export async function createEvent(input: NewEventInput): Promise<CampusEvent> {
     .single();
   if (error) throw error;
   return toEvent(data as EventRow);
+}
+
+/** Sets (or clears, with null) the profile photo's storage path. */
+export async function setAvatarPath(path: string | null): Promise<User> {
+  const userId = await currentUserId();
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({ avatar_path: path })
+    .eq('id', userId)
+    .select('*')
+    .single();
+  if (error) throw error;
+  return toUser(data as ProfileRow);
 }
 
 export async function updateProfile(input: ProfileInput): Promise<User> {

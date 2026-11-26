@@ -60,7 +60,8 @@ interface AppState {
   postUpdate: (eventId: string, input: NewUpdateInput) => Promise<boolean>;
   reportEvent: (eventId: string, reason: ReportReason, note?: string) => Promise<boolean>;
   resetDemo: () => Promise<boolean>;
-  updateProfile: (input: ProfileInput) => Promise<void>;
+  /** Saves the profile, and the profile photo if it changed. Throws on failure. */
+  updateProfile: (input: ProfileInput, avatar?: PhotoChange) => Promise<void>;
 
   showToast: (message: string, options?: { tone?: Toast['tone']; action?: Toast['action'] }) => void;
   hideToast: () => void;
@@ -384,9 +385,22 @@ export const useAppStore = create<AppState>()(
           return true;
         },
 
-        updateProfile: async (input) => {
-          const user = await api.updateProfile(input);
+        updateProfile: async (input, avatar) => {
+          let user = await api.updateProfile(input);
           set({ user });
+          if (!avatar || avatar.kind === 'keep') return;
+
+          const oldPath = user.avatarPath;
+          const newPath = avatar.kind === 'replace' ? await api.uploadEventPhoto(avatar.photo, 'avatar-') : null;
+          try {
+            user = await api.setAvatarPath(newPath);
+          } catch (err) {
+            if (newPath) void api.deleteEventPhoto(newPath).catch(() => {});
+            throw err;
+          }
+          set({ user });
+          // Only now that the profile points at the new photo, remove the old file.
+          if (oldPath) void api.deleteEventPhoto(oldPath).catch(() => {});
         },
 
         showToast: (message, options) => {

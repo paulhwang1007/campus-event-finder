@@ -30,6 +30,10 @@ export interface User {
   gradYear?: number;
   major?: string;
   bio?: string;
+  /** Public URL of the profile photo, if any. */
+  avatarUrl?: string;
+  /** Where the photo lives in storage; needed to replace or delete it. */
+  avatarPath?: string;
   interests: CategoryId[];
   verified: boolean;
   /** False until the user finishes first-time profile setup. */

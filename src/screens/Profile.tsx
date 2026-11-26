@@ -2,6 +2,7 @@ import { animate, AnimatePresence, motion, useReducedMotion } from 'framer-motio
 import { format } from 'date-fns';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Avatar } from '../components/Avatar';
 import { EventRow } from '../components/EventRow';
 import { IconCalendar, IconChevronRight, IconPencil, IconPlus } from '../components/Icon';
 import { getCategory } from '../data/categories';
@@ -20,12 +21,6 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'hosting', label: 'Hosting' },
   { id: 'attended', label: 'Attended' },
 ];
-
-function initials(name: string | undefined): string {
-  if (!name) return '?';
-  const parts = name.trim().split(/\s+/);
-  return ((parts[0]?.[0] ?? '') + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase();
-}
 
 export function Profile() {
   const navigate = useNavigate();
@@ -56,7 +51,7 @@ export function Profile() {
           aria-label="Edit profile"
           onClick={() => navigate('/profile/edit')}
         >
-          <span className="profile__initials">{initials(user?.name)}</span>
+          <Avatar name={user?.name} url={user?.avatarUrl} size={72} />
           <span className="profile__avatar-edit">
             <IconPencil size={12} />
           </span>
