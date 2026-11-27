@@ -159,3 +159,22 @@
   font-size: var(--text-bodystrong-size);
   font-weight: var(--text-bodystrong-weight);
 }
+
+.date-time__problem {
+  margin: 0;
+  color: var(--color-danger);
+  font-size: var(--text-bodysm-size);
+  font-weight: 600;
+}
+
+.date-time__time-field input[aria-invalid='true'] {
+  border-color: var(--color-danger);
+  outline-color: var(--color-danger);
+}
+
+.date-time__cta:disabled {
+  background: var(--color-disabled);
+  border-color: var(--color-disabled);
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+}

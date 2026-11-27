@@ -15,6 +15,7 @@ import {
   subMonths,
 } from 'date-fns';
 import { useState } from 'react';
+import { shiftEndWithStart, timeRangeError } from '../lib/validation';
 import { IconArrowLeft, IconCalendar, IconChevronLeft, IconChevronRight } from './Icon';
 import './DateTimePicker.css';
 
@@ -30,11 +31,13 @@ interface Props {
   initialDate: Date | null;
   initialStart: string;
   initialEnd: string;
+  /** Editing an event that already started: its original start time is still allowed. */
+  keepStart?: Date;
   onConfirm: (date: Date, start: string, end: string) => void;
   onBack: () => void;
 }
 
-export function DateTimePicker({ initialDate, initialStart, initialEnd, onConfirm, onBack }: Props) {
+export function DateTimePicker({ initialDate, initialStart, initialEnd, keepStart, onConfirm, onBack }: Props) {
   const now = new Date();
   const today = startOfDay(now);
   const [selected, setSelected] = useState<Date>(initialDate ?? today);
@@ -50,6 +53,9 @@ export function DateTimePicker({ initialDate, initialStart, initialEnd, onConfir
     setSelected(startOfDay(date));
     setViewMonth(startOfMonth(date));
   }
+
+  const problem = timeRangeError(selected, startTime, endTime, now, keepStart);
+  const endBeforeStart = problem === 'End time must be after start time.';
 
   const dayLabel = isSameDay(selected, today)
     ? 'Today'
@@ -140,19 +146,46 @@ export function DateTimePicker({ initialDate, initialStart, initialEnd, onConfir
       <div className="date-time__times">
         <label className="date-time__time-field">
           <span>Starts</span>
-          <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} />
+          <input
+            type="time"
+            value={startTime}
+            onChange={(e) => {
+              // Keep the event's length: moving the start moves the end with it.
+              setEndTime(shiftEndWithStart(startTime, endTime, e.target.value));
+              setStartTime(e.target.value);
+            }}
+            aria-invalid={problem != null && !endBeforeStart}
+            aria-describedby="date-time-problem"
+          />
         </label>
         <label className="date-time__time-field">
           <span>Ends</span>
-          <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} />
+          <input
+            type="time"
+            value={endTime}
+            onChange={(e) => setEndTime(e.target.value)}
+            aria-invalid={endBeforeStart}
+            aria-describedby="date-time-problem"
+          />
         </label>
       </div>
 
-      <p className="date-time__preview">
-        <IconCalendar size={14} /> {dayLabel} &middot; {formatTime(startTime)} &ndash; {formatTime(endTime)}
-      </p>
+      {problem ? (
+        <p id="date-time-problem" className="date-time__problem" role="alert">
+          {problem}
+        </p>
+      ) : (
+        <p id="date-time-problem" className="date-time__preview">
+          <IconCalendar size={14} /> {dayLabel} &middot; {formatTime(startTime)} &ndash; {formatTime(endTime)}
+        </p>
+      )}
 
-      <button type="button" className="date-time__cta" onClick={() => onConfirm(selected, startTime, endTime)}>
+      <button
+        type="button"
+        className="date-time__cta"
+        disabled={problem != null}
+        onClick={() => onConfirm(selected, startTime, endTime)}
+      >
         Set date and time
       </button>
     </div>

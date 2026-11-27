@@ -240,6 +240,7 @@ function EventForm({ event }: { event?: CampusEvent }) {
         initialDate={draft.date}
         initialStart={draft.startTime}
         initialEnd={draft.endTime}
+        keepStart={event ? new Date(event.start) : undefined}
         onBack={() => setView('form')}
         onConfirm={(date, start, end) => {
           setDraft((d) => ({ ...d, date, startTime: start, endTime: end }));

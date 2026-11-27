@@ -37,6 +37,44 @@ export interface EditContext {
   goingCount: number;
 }
 
+function toMinutes(time: string): number | null {
+  const match = /^(\d{2}):(\d{2})$/.exec(time);
+  return match ? Number(match[1]) * 60 + Number(match[2]) : null;
+}
+
+function fromMinutes(total: number): string {
+  return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
+}
+
+/**
+ * When the start time changes, move the end so the event keeps the same length
+ * (e.g. 5–6 PM, start moved to 8 PM → 8–9 PM). Ends at 11:59 PM at the latest, since an
+ * event has one date. A previously invalid range gets a 1-hour default.
+ */
+export function shiftEndWithStart(prevStart: string, prevEnd: string, nextStart: string): string {
+  const a = toMinutes(prevStart);
+  const b = toMinutes(prevEnd);
+  const c = toMinutes(nextStart);
+  if (c == null) return prevEnd;
+  const length = a != null && b != null && b > a ? b - a : 60;
+  return fromMinutes(Math.min(c + length, 23 * 60 + 59));
+}
+
+/**
+ * Problem with a date + start/end time, or null if it's fine. Shared by the date & time
+ * picker (shown as you pick) and the form check on Post.
+ * `keepStart`: when editing, an event that already started may keep its original start time.
+ */
+export function timeRangeError(date: Date, startTime: string, endTime: string, now: Date, keepStart?: Date): string | null {
+  const start = combineDateAndTime(date, startTime);
+  const end = combineDateAndTime(date, endTime);
+  if (!start || !end) return 'Pick a start and end time.';
+  if (end <= start) return 'End time must be after start time.';
+  const unchangedStart = keepStart != null && Math.floor(start.getTime() / 60000) === Math.floor(keepStart.getTime() / 60000);
+  if (start.getTime() < now.getTime() - PAST_GRACE_MS && !unchangedStart) return "Start time can't be in the past.";
+  return null;
+}
+
 export function validateEventForm(draft: EventDraft, now: Date, edit?: EditContext): Record<string, string> {
   const errors: Record<string, string> = {};
 
@@ -52,18 +90,8 @@ export function validateEventForm(draft: EventDraft, now: Date, edit?: EditConte
   if (!draft.date || !draft.startTime || !draft.endTime) {
     errors.date = 'Pick a date and time.';
   } else {
-    const start = combineDateAndTime(draft.date, draft.startTime);
-    const end = combineDateAndTime(draft.date, draft.endTime);
-    if (!start || !end) {
-      errors.date = 'Pick a date and time.';
-    } else if (end <= start) {
-      errors.date = 'End time must be after start time.';
-    } else if (
-      start.getTime() < now.getTime() - PAST_GRACE_MS &&
-      !(edit && Math.floor(start.getTime() / 60000) === Math.floor(edit.originalStart.getTime() / 60000))
-    ) {
-      errors.date = "Start time can't be in the past.";
-    }
+    const problem = timeRangeError(draft.date, draft.startTime, draft.endTime, now, edit?.originalStart);
+    if (problem) errors.date = problem;
   }
 
   if (!draft.locationName.trim()) errors.locationName = 'Location is required.';

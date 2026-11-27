@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { combineDateAndTime, validateEventForm, type EventDraft } from './validation';
+import { combineDateAndTime, shiftEndWithStart, timeRangeError, validateEventForm, type EventDraft } from './validation';
 
 // combineDateAndTime does its arithmetic in local time (setHours), so fixtures
 // must be constructed as local dates too, not parsed from UTC ISO strings.
@@ -115,5 +115,40 @@ describe('validateEventForm when editing', () => {
   it("doesn't ask for the policy checkbox again", () => {
     const draft = makeDraft({ startTime: '14:00', endTime: '17:00', policyAck: false });
     expect(validateEventForm(draft, editNow, edit)).toEqual({});
+  });
+});
+
+describe('timeRangeError', () => {
+  const day = new Date(2026, 10, 30);
+  const before = new Date(2026, 10, 27, 12, 0);
+
+  it('refuses an end before or equal to the start', () => {
+    expect(timeRangeError(day, '20:00', '18:00', before)).toBe('End time must be after start time.');
+    expect(timeRangeError(day, '20:00', '20:00', before)).toBe('End time must be after start time.');
+  });
+
+  it('accepts a normal range', () => {
+    expect(timeRangeError(day, '18:00', '20:00', before)).toBeNull();
+  });
+
+  it('refuses a start in the past, unless it is the event’s original start', () => {
+    const later = new Date(2026, 10, 30, 21, 0);
+    expect(timeRangeError(day, '18:00', '22:00', later)).toBe("Start time can't be in the past.");
+    expect(timeRangeError(day, '18:00', '22:00', later, new Date(2026, 10, 30, 18, 0))).toBeNull();
+  });
+});
+
+describe('shiftEndWithStart', () => {
+  it('keeps the event length when the start moves', () => {
+    expect(shiftEndWithStart('17:00', '18:30', '20:00')).toBe('21:30');
+    expect(shiftEndWithStart('17:00', '18:00', '09:15')).toBe('10:15');
+  });
+
+  it('stops at 11:59 PM, since an event has one date', () => {
+    expect(shiftEndWithStart('17:00', '20:00', '22:30')).toBe('23:59');
+  });
+
+  it('uses one hour when the old range was invalid', () => {
+    expect(shiftEndWithStart('20:00', '18:00', '19:00')).toBe('20:00');
   });
 });
